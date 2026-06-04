@@ -307,6 +307,7 @@ html, body { height: 100%; background: var(--bg); color: var(--text); font-famil
   </div>
   <div class="topbar-right">
     <div id="clock">00:00:00</div>
+    <button class="btn-top" onclick="refreshData()">🔄 새로고침</button>
     <button class="btn-top" onclick="openStats()">📊 통계</button>
     <button class="btn-top" onclick="downloadCSV()">📥 CSV</button>
     <button class="btn-top" onclick="toggleFullscreen()">🖥️ 전체</button>
@@ -386,7 +387,32 @@ function startFirestoreSync() {
       render();
       console.log('🔄 Firestore 실시간 동기화됨');
     }
+  }, (error) => {
+    console.error('❌ Firestore 리스너 오류:', error);
   });
+}
+
+// 🆕 방법 3: 수동 새로고침 함수
+async function refreshData() {
+  const today = todayStr();
+  try {
+    console.log('🔄 수동 새로고침 시작...');
+    const doc = await db.collection('work_data').doc(today).get();
+    if (doc.exists) {
+      const data = doc.data();
+      state = data.state;
+      startTimes = data.startTimes || {};
+      render();
+      console.log('✅ 수동 새로고침 완료');
+      toast('✅ 새로고침 완료');
+    } else {
+      console.log('⚠️ Firestore에 데이터 없음');
+      toast('⚠️ 데이터 없음');
+    }
+  } catch(e) {
+    console.error('❌ 수동 새로고침 실패:', e);
+    toast('❌ 새로고침 실패: ' + e.message);
+  }
 }
 
 async function saveState() {
@@ -849,6 +875,25 @@ loadFromFirestore();
 
 // Firestore 실시간 동기화 시작
 startFirestoreSync();
+
+// 🆕 방법 1: 매초 자동 새로고침 (모든 PC 동기화)
+setInterval(async () => {
+  const today = todayStr();
+  try {
+    const doc = await db.collection('work_data').doc(today).get();
+    if (doc.exists) {
+      const data = doc.data();
+      if (JSON.stringify(state) !== JSON.stringify(data.state)) {
+        state = data.state;
+        startTimes = data.startTimes || {};
+        render();
+        console.log('🔄 자동 동기화 완료 (다른 PC에서 변경됨)');
+      }
+    }
+  } catch(e) {
+    console.error('❌ 자동 동기화 실패:', e);
+  }
+}, 1000);  // 1초마다
 
 render();
 updateClock();
