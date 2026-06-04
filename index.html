@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>현대북수원서비스 정비 현황</title>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script>
+// Firebase 설정
+const firebaseConfig = {
+  apiKey: "AIzaSyAybAB6dQjlZGSnz__tKknNPSR9JlBNgyQ",
+  authDomain: "bh-hbs.firebaseapp.com",
+  databaseURL: "https://bh-hbs-default-rtdb.firebaseio.com",
+  projectId: "bh-hbs",
+  storageBucket: "bh-hbs.firebasestorage.app",
+  messagingSenderId: "117807762872",
+  appId: "1:117807762872:web:f83aaba0246273ad7d134d",
+  measurementId: "G-QR3RWNX5HK"
+};
+
+// Firebase 초기화
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+console.log('✅ Firestore 초기화 완료');
+</script>
+<style>
+:root {
+  --bg: #0d1117;
+  --surface: #161b22;
+  --surface2: #1c2333;
+  --border: #30363d;
+  --border2: #21262d;
+  --text: #e6edf3;
+  --text2: #8b949e;
+  --text3: #6e7681;
+  --active-bg: #0d2b1a;
+  --active-border: #238636;
+  --active-text: #3fb950;
+  --active-text2: #56d364;
+  --accent: #1f6feb;
+  --accent2: #388bfd;
+  --hyundai-blue: #002c5f;
+  --hyundai-light: #1565c0;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans KR', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow-x: hidden; }
+
+#topbar {
+  background: linear-gradient(135deg, var(--hyundai-blue) 0%, #003d8f 50%, var(--hyundai-light) 100%);
+  padding: 0 24px;
+  height: 64px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 2px solid rgba(255,255,255,0.15);
+  position: sticky; top: 0; z-index: 50;
+}
+.topbar-left { display: flex; flex-direction: column; }
+.topbar-title { font-size: 15px; font-weight: 700; color: #fff; letter-spacing: -0.3px; }
+.topbar-date { font-size: 11px; color: rgba(255,255,255,0.7); margin-top: 1px; }
+.topbar-right { display: flex; align-items: center; gap: 16px; }
+#clock { font-family: var(--mono); font-size: 18px; font-weight: 600; color: #fff; letter-spacing: 1px; }
+.btn-top {
+  padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500;
+  cursor: pointer; border: 1px solid rgba(255,255,255,0.3); color: #fff;
+  background: rgba(255,255,255,0.12); transition: background .15s;
+}
+.btn-top:hover { background: rgba(255,255,255,0.22); }
+.btn-top.danger { border-color: rgba(248,81,73,0.5); color: #f85149; background: rgba(248,81,73,0.1); }
+.btn-top.danger:hover { background: rgba(248,81,73,0.2); }
+
+#summary {
+  display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+  padding: 14px 24px; background: var(--surface); border-bottom: 1px solid var(--border);
+}
+.sum-card {
+  background: var(--surface2); border: 1px solid var(--border2); border-radius: 10px;
+  padding: 10px 16px; display: flex; flex-direction: column; gap: 2px;
+}
+.sum-label { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .5px; }
+.sum-val { font-size: 26px; font-weight: 700; font-family: var(--mono); color: var(--text); }
+.sum-val.green { color: var(--active-text); }
+.sum-val.blue { color: var(--accent2); }
+.sum-val.yellow { color: #d29922; }
+
+#main { padding: 16px 24px 32px; }
+.grid-wrap {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+@media (max-width: 1200px) { .grid-wrap { grid-template-columns: repeat(3, 1fr); } }
+
+.tech-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  overflow: hidden; display: flex; flex-direction: column;
+  transition: border-color .2s, box-shadow .2s;
+  min-height: 200px;
+}
+.tech-card.has-active { border-color: var(--active-border); box-shadow: 0 0 0 1px var(--active-border); }
+.tech-card.status-off { border-color: #f85149; box-shadow: 0 0 0 1px #f85149; }
+.tech-card.status-day { border-color: #d29922; box-shadow: 0 0 0 1px #d29922; }
+
+.tech-header {
+  padding: 10px 14px; background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; gap: 8px;
+  cursor: pointer; transition: background .15s;
+}
+.tech-header:hover { background: var(--border); }
+.tech-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--accent); display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+}
+.tech-avatar.active { background: var(--active-border); }
+.tech-name { font-size: 13px; font-weight: 700; color: var(--text); flex: 1; }
+.tech-total {
+  font-family: var(--mono); font-size: 11px; font-weight: 600;
+  background: var(--border); color: var(--text2);
+  padding: 2px 8px; border-radius: 20px;
+}
+.tech-total.has-jobs { background: rgba(31,111,235,0.2); color: var(--accent2); }
+
+.active-slot {
+  margin: 12px 10px; border-radius: 8px;
+  background: var(--active-bg); border: 2px solid var(--active-border);
+  padding: 14px 14px; cursor: pointer; transition: all .15s;
+  flex-shrink: 0;
+}
+.active-slot:hover { background: #0f3820; }
+.active-slot.status-off { 
+  background: #3d1a1a !important;
+  border-color: #f85149 !important; 
+}
+.active-slot.status-off:hover { 
+  background: #4d2424 !important;
+}
+.active-slot.status-day { 
+  background: #3d3420 !important;
+  border-color: #d29922 !important; 
+}
+.active-slot.status-day:hover { 
+  background: #4d4430 !important;
+}
+
+.active-content { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; }
+.active-left { flex: 1; }
+.active-right { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; }
+.active-row1 { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+.active-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--active-text2); flex-shrink: 0; animation: pulse 1.5s ease-in-out infinite; }
+@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+.active-car { font-size: 15px; font-weight: 700; color: var(--active-text); letter-spacing: .3px; }
+.active-work { font-size: 12px; color: var(--active-text); opacity: .8; margin-bottom: 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.active-eta-label { font-size: 9px; color: var(--active-text); opacity: .6; text-transform: uppercase; letter-spacing: .3px; }
+.active-eta-val { font-family: var(--mono); font-size: 18px; font-weight: 700; color: var(--active-text2); line-height: 1; }
+.active-eta-sel { background: rgba(255,255,255,0.08); border: 1px solid var(--active-border); color: var(--active-text); padding: 4px 6px; border-radius: 4px; font-family: var(--mono); font-size: 11px; cursor: pointer; transition: background .15s; }
+.active-eta-sel:hover { background: rgba(255,255,255,0.15); }
+.active-eta-sel:focus { outline: none; border-color: var(--active-text2); background: rgba(255,255,255,0.15); }
+.active-timer { font-family: var(--mono); font-size: 13px; color: var(--active-text2); font-weight: 600; }
+
+.empty-slot {
+  margin: 10px; border-radius: 8px;
+  border: 1px dashed var(--border); padding: 12px;
+  display: flex; align-items: center; gap: 8px;
+  color: var(--text3); font-size: 12px; flex-shrink: 0;
+}
+
+.done-list { flex: 1; max-height: 0; overflow: hidden; transition: max-height .3s ease; }
+.done-list.expanded { max-height: 400px; overflow-y: auto; }
+.done-list::-webkit-scrollbar { width: 3px; }
+.done-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.done-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 14px; border-top: 1px solid var(--border2);
+  animation: slideIn .3s ease;
+  transition: background .15s;
+  cursor: pointer;
+}
+.done-item:hover { background: var(--surface2); }
+@keyframes slideIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+.done-num { font-family: var(--mono); font-size: 10px; font-weight: 600; color: var(--text3); min-width: 18px; padding-top: 1px; }
+.done-body { flex: 1; min-width: 0; }
+.done-car { font-size: 13px; font-weight: 700; color: var(--text); }
+.done-work { font-size: 11px; color: var(--text2); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.done-meta { font-family: var(--mono); font-size: 10px; color: var(--text3); margin-top: 2px; }
+.done-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; flex-shrink: 0; }
+.done-time-badge { font-family: var(--mono); font-size: 10px; font-weight: 600; background: var(--surface2); border: 1px solid var(--border); color: var(--text2); padding: 1px 6px; border-radius: 4px; }
+.edit-btn { font-size: 9px; color: var(--text3); background: none; border: none; cursor: pointer; padding: 1px 4px; border-radius: 3px; transition: color .1s, background .1s; }
+.edit-btn:hover { color: #d29922; background: rgba(210,153,34,0.1); }
+
+.toggle-done-btn {
+  margin: 0 10px 8px; padding: 6px 10px; border-radius: 6px;
+  border: 1px solid var(--border); background: var(--surface2);
+  color: var(--text2); font-size: 11px; font-weight: 500; cursor: pointer;
+  width: calc(100% - 20px); transition: background .15s;
+}
+.toggle-done-btn:hover { background: var(--border); color: var(--text); }
+
+.add-car-btn {
+  margin: 10px; padding: 10px 14px; border-radius: 8px;
+  background: rgba(63, 185, 80, 0.15); border: 1px dashed var(--active-border);
+  color: var(--active-text); font-size: 13px; font-weight: 500; cursor: pointer;
+  transition: background .15s; text-align: center;
+}
+.add-car-btn:hover { background: rgba(63, 185, 80, 0.25); }
+
+#modal-wrap {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center;
+  z-index: 100; animation: fadeIn .15s ease;
+}
+@keyframes fadeIn { from {opacity:0} to {opacity:1} }
+.modal {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+  width: 90%; max-width: 500px; padding: 24px; display: flex; flex-direction: column; gap: 16px;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+}
+.modal-title { font-size: 16px; font-weight: 700; color: var(--text); }
+.modal-input {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+  padding: 10px 14px; color: var(--text); font-size: 13px; font-family: var(--sans);
+}
+.modal-input:focus { outline: none; border-color: var(--accent2); box-shadow: 0 0 0 2px rgba(56, 139, 253, 0.2); }
+.modal-buttons { display: flex; gap: 10px; justify-content: flex-end; }
+.btn-primary, .btn-secondary {
+  padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 600;
+  cursor: pointer; border: none; transition: background .15s;
+}
+.btn-primary {
+  background: var(--accent); color: #fff;
+}
+.btn-primary:hover { background: var(--accent2); }
+.btn-secondary {
+  background: var(--surface2); color: var(--text); border: 1px solid var(--border);
+}
+.btn-secondary:hover { background: var(--border); }
+
+#stats-panel {
+  position: fixed; top: 0; right: -400px; width: 400px; height: 100%;
+  background: var(--surface); border-left: 1px solid var(--border);
+  overflow-y: auto; transition: right .3s ease; z-index: 60;
+}
+#stats-panel.open { right: 0; }
+.stats-close {
+  position: absolute; top: 12px; right: 12px; width: 28px; height: 28px;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  color: var(--text2); transition: background .15s;
+}
+.stats-close:hover { background: var(--border); color: var(--text); }
+#stats-content {
+  padding: 24px;
+}
+.stats-title { font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: 16px; }
+.stats-sub { font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+.stats-grid {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px;
+}
+.stats-table {
+  width: 100%; border-collapse: collapse; font-size: 12px;
+  margin-top: 16px;
+}
+.stats-table thead { background: var(--surface2); }
+.stats-table th {
+  padding: 8px; text-align: left; font-weight: 600; color: var(--text2);
+  border-bottom: 1px solid var(--border);
+}
+.stats-table td {
+  padding: 8px; border-bottom: 1px solid var(--border2); color: var(--text);
+}
+.stats-table tr:hover { background: var(--surface2); }
+
+#toast {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(150px);
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 8px;
+  padding: 12px 20px; color: var(--text); font-size: 13px;
+  transition: transform .3s ease; z-index: 200;
+}
+#toast.show { transform: translateX(-50%) translateY(0); }
+
+@media (max-width: 800px) {
+  .grid-wrap { grid-template-columns: repeat(2, 1fr); }
+  #summary { grid-template-columns: repeat(2, 1fr); }
+  #stats-panel { width: 100%; right: -100%; }
+}
+@media (max-width: 480px) {
+  .grid-wrap { grid-template-columns: 1fr; }
+  #summary { grid-template-columns: 1fr; }
+  #topbar { height: auto; flex-wrap: wrap; padding: 8px 12px; }
+  .topbar-title { font-size: 14px; }
+  #clock { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div id="topbar">
+  <div class="topbar-left">
+    <div class="topbar-title">⚙️ 현대북수원서비스 정비 현황</div>
+    <div class="topbar-date" id="date-display"></div>
+  </div>
+  <div class="topbar-right">
+    <div id="clock">00:00:00</div>
+    <button class="btn-top" onclick="openStats()">📊 통계</button>
+    <button class="btn-top" onclick="downloadCSV()">📥 CSV</button>
+    <button class="btn-top" onclick="toggleFullscreen()">🖥️ 전체</button>
+    <button class="btn-top danger" onclick="resetDay()">⏹️ 마감</button>
+  </div>
+</div>
+
+<div id="summary"></div>
+
+<div id="main">
+  <div class="grid-wrap" id="grid"></div>
+</div>
+
+<div id="modal-wrap"></div>
+
+<div id="stats-panel">
+  <button class="stats-close" onclick="closeStats()">✕</button>
+  <div id="stats-content"></div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const TECHS = [
+  '손홍철', '이춘기', '강준구', '이성규', '배병수', '곽재훈',
+  '박주창', '석병수', '최태현', '이진희', '맹성환', '전호원'
+];
+
+let state = null;
+let startTimes = {};
+
+function todayStr() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function loadState() {
+  const today = todayStr();
+  const saved = localStorage.getItem(`bh_state_${today}`);
+  if (saved) {
+    return JSON.parse(saved);
+  }
+  return {
+    techs: TECHS.map(name => ({ name, active: null, done: [] }))
+  };
+}
+
+async function loadFromFirestore() {
+  const today = todayStr();
+  
+  try {
+    const doc = await db.collection('work_data').doc(today).get();
+    if (doc.exists) {
+      const data = doc.data();
+      state = data.state;
+      startTimes = data.startTimes || {};
+      render();
+      console.log('✅ Firestore에서 로드 완료');
+    } else {
+      console.log('Firestore 데이터 없음, 로컬 데이터 사용');
+      state = loadState();
+    }
+  } catch(e) {
+    console.error('Firestore 로드 실패:', e);
+    state = loadState();
+  }
+}
+
+function startFirestoreSync() {
+  const today = todayStr();
+  
+  db.collection('work_data').doc(today).onSnapshot((doc) => {
+    if (doc.exists) {
+      const data = doc.data();
+      state = data.state;
+      startTimes = data.startTimes || {};
+      render();
+      console.log('🔄 Firestore 실시간 동기화됨');
+    }
+  });
+}
+
+async function saveState() {
+  const today = todayStr();
+  
+  localStorage.setItem(`bh_state_${today}`, JSON.stringify(state));
+  
+  try {
+    await db.collection('work_data').doc(today).set({
+      state: state,
+      startTimes: startTimes,
+      timestamp: new Date()
+    });
+    console.log('✅ Firestore 저장 완료');
+  } catch(e) {
+    console.error('Firestore 저장 실패:', e);
+  }
+}
+
+function updateSummary() {
+  if (!state) return;
+  const totalCars = state.techs.reduce((a, t) => a + t.done.length, 0);
+  const activeCars = state.techs.filter(t => t.active).length;
+  
+  let html = `
+    <div class="sum-card">
+      <div class="sum-label">작업 중</div>
+      <div class="sum-val green">${activeCars}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">완료</div>
+      <div class="sum-val blue">${totalCars}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">가용 기사</div>
+      <div class="sum-val">${TECHS.length - activeCars}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">평균 시간</div>
+      <div class="sum-val yellow">${totalCars > 0 ? fmtMin(state.techs.reduce((a,t) => a + t.done.reduce((a2,d) => a2+d.sec, 0), 0) / totalCars) : '-'}</div>
+    </div>
+    <div class="sum-card">
+      <div class="sum-label">총 시간</div>
+      <div class="sum-val">${fmtMin(state.techs.reduce((a,t) => a + t.done.reduce((a2,d) => a2+d.sec, 0), 0))}</div>
+    </div>
+  `;
+  document.getElementById('summary').innerHTML = html;
+}
+
+function render() {
+  if (!state) return;
+  updateSummary();
+  let html = '';
+  state.techs.forEach((tech, idx) => {
+    const isActive = tech.active !== null;
+    const statusClass = isActive ? (
+      (tech.active.car.includes('휴무') || tech.active.work.includes('휴무')) ? 'status-off' :
+      (tech.active.car.includes('하루') || tech.active.work.includes('하루')) ? 'status-day' : ''
+    ) : '';
+    
+    html += `<div class="tech-card ${isActive ? 'has-active' : ''} ${statusClass}">
+      <div class="tech-header">
+        <div class="tech-avatar ${isActive ? 'active' : ''}">${tech.name[0]}</div>
+        <div class="tech-name">${tech.name}</div>
+        <div class="tech-total ${isActive ? 'has-jobs' : ''}">${tech.done.length}</div>
+      </div>`;
+    
+    if (isActive) {
+      const statusActiveClass = (tech.active.car.includes('휴무') || tech.active.work.includes('휴무')) ? 'status-off' :
+        (tech.active.car.includes('하루') || tech.active.work.includes('하루')) ? 'status-day' : '';
+      html += `<div class="active-slot ${statusActiveClass}">
+        <div class="active-content">
+          <div class="active-left">
+            <div class="active-row1">
+              <div class="active-dot"></div>
+              <div class="active-car">${tech.active.car}</div>
+            </div>
+            <div class="active-work">${tech.active.work}</div>
+          </div>
+          <div class="active-right">
+            <div class="active-eta-label">목표</div>
+            <select class="active-eta-sel" onchange="setETA(${idx}, this.value)">
+              <option value="10" ${tech.active.eta === 10 ? 'selected' : ''}>10분</option>
+              <option value="15" ${tech.active.eta === 15 ? 'selected' : ''}>15분</option>
+              <option value="20" ${tech.active.eta === 20 ? 'selected' : ''}>20분</option>
+              <option value="30" ${tech.active.eta === 30 ? 'selected' : ''}>30분</option>
+              <option value="60" ${tech.active.eta === 60 ? 'selected' : ''}>1시간</option>
+            </select>
+            <div class="active-eta-val" id="eta-${idx}">${fmtMin(tech.active.eta * 60 - ((Date.now() - startTimes[tech.name]) / 1000))}</div>
+            <div class="active-timer" id="timer-${idx}"></div>
+          </div>
+        </div>
+        <button onclick="finishJob(${idx})" style="margin-top:10px;width:100%;padding:8px;background:var(--active-border);color:#fff;border:none;border-radius:6px;cursor:pointer;font-weight:600;transition:background .15s">✓ 완료</button>
+        <button onclick="removeJob(${idx})" style="margin-top:6px;width:100%;padding:6px;background:rgba(248,81,73,0.2);color:#f85149;border:1px solid rgba(248,81,73,0.5);border-radius:6px;cursor:pointer;font-size:12px;transition:background .15s">✕ 취소</button>
+      </div>`;
+    } else {
+      html += `<button class="add-car-btn" onclick="newJob(${idx})">+ 차량 등록</button>`;
+    }
+    
+    html += `<div class="done-list" id="done-${idx}">`;
+    tech.done.forEach((job, jidx) => {
+      html += `<div class="done-item">
+        <div class="done-num">${jidx+1}</div>
+        <div class="done-body">
+          <div class="done-car">${job.car}</div>
+          <div class="done-work">${job.work}</div>
+          <div class="done-meta">${job.startTime} ~ ${job.endTime}</div>
+        </div>
+        <div class="done-right">
+          <div class="done-time-badge">${fmtMin(job.sec)}</div>
+          <button class="edit-btn" onclick="delJob(${idx}, ${jidx})">삭제</button>
+        </div>
+      </div>`;
+    });
+    html += `</div>`;
+    
+    if (tech.done.length > 0) {
+      html += `<button class="toggle-done-btn" onclick="toggleDone(${idx})">▼ ${tech.done.length}건 보기</button>`;
+    }
+    
+    html += `</div>`;
+  });
+  document.getElementById('grid').innerHTML = html;
+  document.getElementById('date-display').textContent = new Date().toLocaleDateString('ko-KR', { weekday: 'long', month: 'short', day: 'numeric' });
+}
+
+function updateTimers() {
+  state.techs.forEach((tech, idx) => {
+    if (tech.active) {
+      const now = Date.now();
+      const elapsed = (now - startTimes[tech.name]) / 1000;
+      const remaining = tech.active.eta * 60 - elapsed;
+      const etaEl = document.getElementById(`eta-${idx}`);
+      const timerEl = document.getElementById(`timer-${idx}`);
+      if (etaEl) etaEl.textContent = fmtMin(Math.max(0, remaining));
+      if (timerEl) {
+        const hrs = Math.floor(elapsed / 3600);
+        const mins = Math.floor((elapsed % 3600) / 60);
+        const secs = Math.floor(elapsed % 60);
+        timerEl.textContent = `${hrs}:${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+      }
+    }
+  });
+}
+
+function updateClock() {
+  const now = new Date();
+  const hrs = String(now.getHours()).padStart(2,'0');
+  const mins = String(now.getMinutes()).padStart(2,'0');
+  const secs = String(now.getSeconds()).padStart(2,'0');
+  document.getElementById('clock').textContent = `${hrs}:${mins}:${secs}`;
+}
+
+function fmtMin(sec) {
+  const m = Math.floor(sec / 60);
+  const s = Math.floor(sec % 60);
+  return `${m}:${String(s).padStart(2,'0')}`;
+}
+
+function newJob(idx) {
+  const html = `
+    <div id="mo" class="modal-wrap" onclick="bgClose(event)" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:100">
+      <div class="modal">
+        <div class="modal-title">🚗 차량 등록</div>
+        <input type="text" id="car-input" placeholder="차량번호 (예: 12가 3456)" class="modal-input" onkeypress="if(event.key==='Enter') addJob(${idx})">
+        <input type="text" id="work-input" placeholder="작업내용 (예: 엔진오일 교환)" class="modal-input" onkeypress="if(event.key==='Enter') addJob(${idx})">
+        <div class="modal-buttons">
+          <button class="btn-secondary" onclick="closeModal()">취소</button>
+          <button class="btn-primary" onclick="addJob(${idx})">등록</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.getElementById('modal-wrap').innerHTML = html;
+  document.getElementById('car-input').focus();
+}
+
+function addJob(idx) {
+  const car = document.getElementById('car-input').value.trim();
+  const work = document.getElementById('work-input').value.trim();
+  if (!car || !work) { toast('차량번호와 작업내용을 입력하세요'); return; }
+  
+  state.techs[idx].active = {
+    car, work, eta: 20, startTime: new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'})
+  };
+  startTimes[state.techs[idx].name] = Date.now();
+  closeModal();
+  render();
+  saveState();
+  toast(`${state.techs[idx].name}이(가) 작업을 시작했습니다`);
+}
+
+function finishJob(idx) {
+  const job = state.techs[idx].active;
+  if (!job) return;
+  const sec = (Date.now() - startTimes[state.techs[idx].name]) / 1000;
+  job.endTime = new Date().toLocaleTimeString('ko-KR', {hour:'2-digit',minute:'2-digit'});
+  job.sec = Math.round(sec);
+  state.techs[idx].done.push(job);
+  state.techs[idx].active = null;
+  render();
+  saveState();
+  toast(`${state.techs[idx].name}: ${job.car} (${fmtMin(sec)}) 완료`);
+}
+
+function removeJob(idx) {
+  if (!state.techs[idx].active) return;
+  state.techs[idx].active = null;
+  render();
+  saveState();
+  toast('작업이 취소되었습니다');
+}
+
+function delJob(idx, jidx) {
+  state.techs[idx].done.splice(jidx, 1);
+  render();
+  saveState();
+}
+
+function setETA(idx, val) {
+  if (state.techs[idx].active) {
+    state.techs[idx].active.eta = parseInt(val);
+    saveState();
+  }
+}
+
+function toggleDone(idx) {
+  const el = document.getElementById(`done-${idx}`);
+  el.classList.toggle('expanded');
+}
+
+function resetDay() {
+  if (!confirm('마감하시겠습니까? (CSV 다운로드 + 데이터 초기화)')) return;
+  downloadCSV();
+  const today = todayStr();
+  localStorage.setItem(`bh_archive_${today}`, JSON.stringify({ date: today, data: state }));
+  
+  db.collection('work_data').doc(today).delete().then(() => {
+    console.log('Firestore 데이터 삭제됨');
+  });
+  
+  state = loadState();
+  startTimes = {};
+  render();
+  toast('마감 완료');
+}
+
+function downloadCSV() {
+  const today = todayStr();
+  const data = [];
+  
+  data.push(['정비 현황 리포트']);
+  data.push(['날짜', today]);
+  data.push([]);
+  data.push(['기사별 통계']);
+  data.push(['기사명', '완료 대수', '평균 시간', '총 시간']);
+  
+  state.techs.forEach(t => {
+    if (t.done.length > 0) {
+      const totalSec = t.done.reduce((a, d) => a + d.sec, 0);
+      const avgSec = totalSec / t.done.length;
+      data.push([
+        t.name,
+        t.done.length,
+        fmtMin(avgSec),
+        fmtMin(totalSec)
+      ]);
+    }
+  });
+  
+  const totalCars = state.techs.reduce((a, t) => a + t.done.length, 0);
+  const totalSeconds = state.techs.reduce((a, t) => a + t.done.reduce((a2, d) => a2 + d.sec, 0), 0);
+  data.push([]);
+  data.push(['합계', totalCars, fmtMin(totalSeconds / Math.max(totalCars, 1)), fmtMin(totalSeconds)]);
+  
+  data.push([]);
+  data.push(['상세 작업 내역']);
+  data.push(['기사명', '차량번호', '작업내용', '시작시간', '완료시간', '작업시간']);
+  
+  state.techs.forEach(t => {
+    t.done.forEach(d => {
+      data.push([
+        t.name,
+        d.car,
+        d.work,
+        d.startTime,
+        d.endTime,
+        fmtMin(d.sec)
+      ]);
+    });
+  });
+  
+  const csv = data.map(row => 
+    row.map(cell => {
+      if (typeof cell === 'string' && (cell.includes(',') || cell.includes('"') || cell.includes('\n'))) {
+        return `"${cell.replace(/"/g, '""')}"`;
+      }
+      return cell;
+    }).join(',')
+  ).join('\n');
+  
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const link = document.createElement('a');
+  const url = URL.createObjectURL(blob);
+  link.setAttribute('href', url);
+  link.setAttribute('download', `정비현황_${today}.csv`);
+  link.click();
+  URL.revokeObjectURL(url);
+}
+
+function openStats() {
+  if (!state) return;
+  const panel = document.getElementById('stats-panel');
+  
+  let html = `<div class="stats-title">📊 작업 통계</div>`;
+  
+  html += `
+  <div style="margin-bottom: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+    <select id="stats-month" onchange="updateMonthStats()" style="padding:8px 12px;border-radius:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text);cursor:pointer;font-size:13px">
+      <option value="today">📅 오늘</option>
+      <option value="month" selected>📊 이번 달</option>
+      <option value="last-month">📆 지난 달</option>
+    </select>
+  </div>
+  <div id="stats-content-inner"></div>`;
+  
+  document.getElementById('stats-content').innerHTML = html;
+  updateMonthStats();
+  panel.classList.add('open');
+}
+
+function updateMonthStats() {
+  const selectEl = document.getElementById('stats-month');
+  const period = selectEl.value;
+  
+  let data = [];
+  let periodName = '';
+  
+  if (period === 'today') {
+    data = [{ date: todayStr(), data: state }];
+    const d = new Date();
+    periodName = d.toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'short' });
+  } else if (period === 'month') {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    
+    for (let day = 1; day <= 31; day++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const archiveKey = `bh_archive_${dateStr}`;
+      const archived = localStorage.getItem(archiveKey);
+      if (archived) {
+        data.push(JSON.parse(archived));
+      }
+    }
+    periodName = `${new Date().getFullYear()}년 ${month}월`;
+  } else if (period === 'last-month') {
+    const now = new Date();
+    now.setMonth(now.getMonth() - 1);
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+    
+    for (let day = 1; day <= 31; day++) {
+      const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+      const archiveKey = `bh_archive_${dateStr}`;
+      const archived = localStorage.getItem(archiveKey);
+      if (archived) {
+        data.push(JSON.parse(archived));
+      }
+    }
+    periodName = `${year}년 ${month}월`;
+  }
+  
+  renderMonthStats(data, periodName);
+}
+
+function renderMonthStats(data, periodName) {
+  if (data.length === 0) {
+    document.getElementById('stats-content-inner').innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px;font-size:14px">데이터가 없습니다</div>';
+    return;
+  }
+  
+  const techStats = {};
+  TECHS.forEach(t => techStats[t] = { done: 0, sec: 0 });
+  
+  data.forEach(d => {
+    const stateData = d.data || d;
+    if (stateData.techs) {
+      stateData.techs.forEach(t => {
+        if (!techStats[t.name]) techStats[t.name] = { done: 0, sec: 0 };
+        techStats[t.name].done += t.done.length;
+        t.done.forEach(item => {
+          techStats[t.name].sec += item.sec;
+        });
+      });
+    }
+  });
+  
+  const sorted = Object.entries(techStats)
+    .sort((a, b) => b[1].done - a[1].done)
+    .filter(([name, stats]) => stats.done > 0);
+  
+  const totalDone = sorted.reduce((a, [, s]) => a + s.done, 0);
+  const totalSec = sorted.reduce((a, [, s]) => a + s.sec, 0);
+  
+  let html = `<div class="stats-sub">${periodName} — 총 ${data.length}일, ${totalDone}대, 평균 ${totalDone > 0 ? fmtMin(Math.round(totalSec/totalDone)) : '-'}</div>`;
+  
+  html += `<div class="stats-grid">`;
+  sorted.slice(0, 4).forEach(([name, stats]) => {
+    html += `<div class="sum-card">
+      <div class="sum-label">${name}</div>
+      <div class="sum-val" style="font-size:22px">${stats.done}대</div>
+      <div style="font-size:11px;color:var(--text3);margin-top:2px">평균 ${fmtMin(Math.round(stats.sec/stats.done))}</div>
+    </div>`;
+  });
+  html += `</div>`;
+  
+  html += `<table class="stats-table"><thead><tr>
+    <th>순위</th><th>기사명</th><th>완료 대수</th><th>평균 시간</th>
+  </tr></thead><tbody>`;
+  
+  sorted.forEach(([name, stats], idx) => {
+    html += `<tr>
+      <td><span style="display:inline-block;width:24px;height:24px;border-radius:50%;background:var(--border);text-align:center;line-height:24px;font-weight:600;font-size:11px">${idx+1}</span></td>
+      <td style="font-weight:700">${name}</td>
+      <td style="font-family:var(--mono);color:var(--accent2)">${stats.done}대</td>
+      <td style="font-family:var(--mono)">${fmtMin(Math.round(stats.sec/stats.done))}</td>
+    </tr>`;
+  });
+  
+  html += `</tbody></table>`;
+  
+  document.getElementById('stats-content-inner').innerHTML = html;
+}
+
+function closeStats() {
+  document.getElementById('stats-panel').classList.remove('open');
+}
+
+function closeModal() { document.getElementById('modal-wrap').innerHTML = ''; }
+function bgClose(e) { if (e.target.id === 'mo') closeModal(); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+function toggleFullscreen() {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    document.exitFullscreen();
+  }
+}
+
+state = loadState();
+
+// Firestore에서 데이터 로드
+loadFromFirestore();
+
+// Firestore 실시간 동기화 시작
+startFirestoreSync();
+
+render();
+updateClock();
+setInterval(updateClock, 1000);
+setInterval(() => { updateTimers(); }, 1000);
+setInterval(saveState, 5000);  // 5초마다 저장
+</script>
+</body>
+</html>
