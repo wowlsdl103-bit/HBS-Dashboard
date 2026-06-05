@@ -18,34 +18,35 @@
     --font:'Noto Sans KR',sans-serif;
     --mono:'JetBrains Mono',monospace;
   }
-  html,body{width:100%;min-height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);overflow-x:hidden}
+  html,body{width:100%;height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
+  body{display:flex;flex-direction:column}
 
   /* ─── HEADER ─── */
   .header{
     background:linear-gradient(180deg,#0a1428 0%,#060d1f 100%);
-    border-bottom:1px solid var(--border2);
-    padding:14px 24px;display:flex;align-items:center;justify-content:space-between;
-    position:sticky;top:0;z-index:200;
+    border-bottom:2px solid var(--border2);
+    padding:16px 28px;display:flex;align-items:center;justify-content:space-between;
+    flex-shrink:0;z-index:200;
     box-shadow:0 2px 20px rgba(0,0,0,.6);
   }
   .header-left{}
-  .header-title{font-size:20px;font-weight:900;color:#fff;letter-spacing:-0.5px;line-height:1.2}
+  .header-title{font-size:28px;font-weight:900;color:#fff;letter-spacing:-0.5px;line-height:1.2}
   .header-title .accent{color:var(--blue)}
-  .header-date{font-size:13px;color:var(--text2);margin-top:3px;font-family:var(--mono)}
-  .header-center{display:flex;align-items:center;gap:24px}
-  .stat-pill{display:flex;flex-direction:column;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:6px 18px;min-width:70px}
-  .stat-pill .num{font-size:22px;font-weight:700;font-family:var(--mono);line-height:1}
-  .stat-pill .lbl{font-size:11px;color:var(--text3);margin-top:2px}
+  .header-date{font-size:15px;color:var(--text2);margin-top:4px;font-family:var(--mono)}
+  .header-center{display:flex;align-items:center;gap:14px}
+  .stat-pill{display:flex;flex-direction:column;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 20px;min-width:84px}
+  .stat-pill .num{font-size:30px;font-weight:900;font-family:var(--mono);line-height:1}
+  .stat-pill .lbl{font-size:12px;color:var(--text3);margin-top:4px}
   .stat-pill.active .num{color:var(--green)}
   .stat-pill.done .num{color:var(--blue)}
   .stat-pill.total .num{color:var(--yellow)}
-  .stat-pill.avg{min-width:88px}
-  .stat-pill.avg .num{color:#b388ff;font-size:18px}
+  .stat-pill.avg{min-width:104px}
+  .stat-pill.avg .num{color:#b388ff;font-size:24px}
   .header-right{display:flex;gap:8px;align-items:center}
-  .clock{font-family:var(--mono);font-size:20px;font-weight:700;color:var(--yellow);background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:6px 14px;letter-spacing:2px}
-  .sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;margin-right:4px}
+  .clock{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--yellow);background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 16px;letter-spacing:2px}
+  .sync-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;margin-right:4px}
   @keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px var(--green)}50%{opacity:.3;box-shadow:none}}
-  .btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:7px;padding:7px 14px;font-size:13px;cursor:pointer;transition:all .18s;font-family:var(--font);font-weight:500}
+  .btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:9px 15px;font-size:14px;cursor:pointer;transition:all .18s;font-family:var(--font);font-weight:500}
   .btn:hover{background:var(--bg4);color:var(--text);border-color:var(--blue)}
   .btn-danger{border-color:rgba(255,23,68,.4);color:#ff6b6b}
   .btn-danger:hover{background:rgba(255,23,68,.15);border-color:var(--red);color:var(--red)}
@@ -55,13 +56,13 @@
   .btn-primary:hover{background:var(--blue2);border-color:var(--blue2)}
 
   /* ─── GRID ─── */
-  .grid-wrap{padding:14px;background:var(--bg)}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .grid-wrap{flex:1;padding:14px;background:var(--bg);overflow:hidden;min-height:0}
+  .grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:12px;height:100%}
 
   /* ─── MECHANIC CARD ─── */
   .mechanic-card{
-    background:var(--card-bg);border:1px solid var(--border);border-radius:12px;
-    display:flex;flex-direction:column;overflow:hidden;
+    background:var(--card-bg);border:1px solid var(--border);border-radius:14px;
+    display:flex;flex-direction:column;overflow:hidden;min-height:0;
     transition:border-color .2s;
   }
   .mechanic-card.has-active{border-color:rgba(0,230,118,.35)}
@@ -94,12 +95,12 @@
 
   .card-header{
     display:flex;align-items:center;justify-content:space-between;
-    padding:10px 14px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border);
+    padding:14px 18px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border);flex-shrink:0;
   }
   .card-header-left{}
-  .mech-name{font-size:15px;font-weight:700;color:#fff}
-  .mech-count{font-size:11px;color:var(--text3);margin-top:1px}
-  .badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;letter-spacing:.3px}
+  .mech-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:-0.5px;line-height:1.1}
+  .mech-count{font-size:13px;color:var(--text2);margin-top:3px}
+  .badge{font-size:14px;font-weight:700;padding:5px 14px;border-radius:20px;letter-spacing:.3px}
   .badge-wait{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
   .badge-active{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.4)}
   .badge-holiday{background:rgba(255,23,68,.15);color:#ff6b6b;border:1px solid rgba(255,23,68,.5)}
@@ -107,55 +108,58 @@
 
   /* Active vehicle row */
   .active-row{
-    margin:10px 12px 0;padding:10px 12px;
-    background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.3);
-    border-radius:8px;cursor:pointer;transition:background .18s;
-    display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin:12px 14px 0;padding:14px 16px;
+    background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.35);
+    border-radius:10px;cursor:pointer;transition:background .18s;
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
   }
-  .active-row:hover{background:rgba(0,230,118,.12);border-color:rgba(0,230,118,.5)}
-  .active-row .pulse{width:7px;height:7px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
+  .active-row:hover{background:rgba(0,230,118,.14);border-color:rgba(0,230,118,.55)}
+  .active-row .pulse{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
   .active-left{flex:1;min-width:0}
-  .active-car{font-size:14px;font-weight:700;color:var(--green);font-family:var(--mono);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .active-work{font-size:11px;color:#5da878;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .active-elapsed{font-size:11px;color:var(--text2);margin-top:4px;font-family:var(--mono)}
-  .active-elapsed i{font-size:12px;vertical-align:-1px}
+  .active-car{font-size:24px;font-weight:900;color:var(--green);font-family:var(--mono);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
+  .active-work{font-size:15px;color:#6fd99a;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .active-elapsed{font-size:13px;color:var(--text2);margin-top:5px;font-family:var(--mono)}
+  .active-elapsed i{font-size:14px;vertical-align:-1px}
   .active-right{text-align:right;flex-shrink:0}
-  .eta-label{font-size:10px;color:var(--text3)}
-  .eta-time{font-size:13px;font-weight:700;color:var(--yellow);font-family:var(--mono)}
+  .eta-label{font-size:12px;color:var(--text3)}
+  .eta-time{font-size:26px;font-weight:900;color:var(--yellow);font-family:var(--mono);line-height:1.1}
 
-  .no-vehicle{padding:16px 12px;text-align:center;color:var(--text3);font-size:12px}
+  .no-vehicle{padding:24px 12px;text-align:center;color:var(--text3);font-size:16px}
+
+  /* 카드 본문: 차량박스 고정, 완료/입고는 남는 공간에서 스크롤 */
+  .card-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
+  .card-scroll{flex:1;overflow-y:auto;min-height:0}
+  .card-scroll::-webkit-scrollbar{width:4px}
+  .card-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
 
   /* Completed section */
-  .comp-section{margin:8px 12px 0;border-top:1px solid var(--border);padding-top:8px}
-  .comp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
-  .comp-title{font-size:11px;color:var(--text3)}
+  .comp-section{margin:10px 14px 0;border-top:1px solid var(--border);padding-top:10px}
+  .comp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+  .comp-title{font-size:13px;color:var(--text2)}
   .comp-title b{color:var(--blue)}
-  .comp-toggle{font-size:11px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:var(--font);padding:0}
+  .comp-toggle{font-size:13px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:var(--font);padding:0}
   .comp-toggle:hover{color:#64b5f6}
-  .comp-list{display:none;max-height:180px;overflow-y:auto}
+  .comp-list{display:none}
   .comp-list.open{display:block}
-  .comp-list::-webkit-scrollbar{width:3px}
-  .comp-list::-webkit-scrollbar-track{background:transparent}
-  .comp-list::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
   .comp-item{
     display:flex;align-items:center;justify-content:space-between;
-    padding:5px 2px;border-bottom:1px solid rgba(255,255,255,.04);
-    cursor:pointer;transition:background .15s;border-radius:4px;padding:5px 4px;
+    border-bottom:1px solid rgba(255,255,255,.04);
+    cursor:pointer;transition:background .15s;border-radius:4px;padding:6px 4px;
   }
   .comp-item:hover{background:rgba(255,255,255,.04)}
   .comp-item:last-child{border-bottom:none}
-  .comp-car{font-size:12px;color:var(--text2);font-family:var(--mono)}
-  .comp-work{font-size:10px;color:var(--text3);margin-top:1px}
+  .comp-car{font-size:14px;color:var(--text);font-family:var(--mono);font-weight:500}
+  .comp-work{font-size:12px;color:var(--text3);margin-top:1px}
   .comp-right{flex-shrink:0;margin-left:6px;text-align:right}
-  .comp-time{font-size:11px;color:var(--text3);font-family:var(--mono)}
-  .comp-took{font-size:11px;color:var(--green);font-family:var(--mono);font-weight:700;margin-top:1px}
+  .comp-time{font-size:12px;color:var(--text3);font-family:var(--mono)}
+  .comp-took{font-size:12px;color:var(--green);font-family:var(--mono);font-weight:700;margin-top:1px}
 
   /* Add button */
   .add-row{
-    margin:8px 12px 12px;padding:9px;
-    background:transparent;border:1px dashed var(--border);border-radius:7px;
-    color:var(--text3);font-size:12px;cursor:pointer;transition:all .18s;
-    font-family:var(--font);width:calc(100% - 24px);text-align:center;
+    margin:10px 14px 14px;padding:11px;
+    background:transparent;border:1px dashed var(--border);border-radius:8px;
+    color:var(--text3);font-size:14px;cursor:pointer;transition:all .18s;
+    font-family:var(--font);width:calc(100% - 28px);text-align:center;flex-shrink:0;
   }
   .add-row:hover{background:var(--bg4);border-color:var(--blue);color:var(--blue)}
 
@@ -258,7 +262,7 @@
   <div class="header-right">
     <span class="sync-dot" id="sync-dot"></span>
     <div class="clock" id="clock">00:00:00</div>
-    <button class="btn" id="btn-settings">⚙ 기사 설정</button>
+    <button class="btn" id="btn-settings">⚙ 설정</button>
     <button class="btn btn-primary" id="btn-export">📊 엑셀 마감</button>
     <button class="btn btn-danger" id="btn-reset-open">초기화</button>
   </div>
@@ -270,12 +274,6 @@
 </div>
 
 <!-- BOTTOM -->
-<div class="bottom-bar">
-  <div class="legend"><div class="leg-dot" style="background:rgba(0,230,118,.3);border:1px solid var(--green)"></div>진행중</div>
-  <div class="legend"><div class="leg-dot" style="background:var(--bg3);border:1px solid var(--border)"></div>완료</div>
-  <div style="margin-left:auto;font-size:12px;color:var(--text3)">현대북수원서비스 정비 현황 v2.0 · Firestore 실시간 연동</div>
-</div>
-
 <!-- ── ADD MODAL ── -->
 <div class="overlay" id="add-overlay">
 <div class="modal">
@@ -334,8 +332,13 @@
 <!-- ── SETTINGS MODAL ── -->
 <div class="overlay" id="settings-overlay">
 <div class="modal settings-m">
-  <h3>⚙️ 기사 이름 / 근무 상태 설정</h3>
+  <h3>⚙️ 기사 / 평균시간 설정</h3>
   <div class="names-grid" id="names-grid"></div>
+  <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border2)">
+    <label class="form-label" style="margin-bottom:6px">평균 작업시간 수동 설정 (분)</label>
+    <input class="form-input" id="s-avg-input" type="number" min="0" placeholder="비워두면 자동 계산">
+    <div style="font-size:12px;color:var(--text3);margin-top:6px">숫자를 입력하면 상단 평균 작업시간에 그 값이 표시됩니다. 비우면 완료 차량 기준으로 자동 계산됩니다.</div>
+  </div>
   <div class="modal-btns">
     <button class="btn btn-success" id="btn-settings-save">저장</button>
     <button class="btn btn-danger" id="btn-settings-cancel">취소</button>
@@ -426,6 +429,7 @@ let mechanics    = [];   // [{name, status}]
 let activeVehicles = {}; // docId → {mechanicIdx, car, work, eta}
 let completedList  = []; // [{mechanicIdx, car, work, eta, doneTime, docId}]
 let editTarget = null;   // {type:'active'|'completed', docId}
+let manualAvgMin = null; // 수동 설정 평균 작업시간(분), null이면 자동계산
 
 /* ════ 날짜 키 ════ */
 function todayKey(){
@@ -467,9 +471,10 @@ async function loadSettings(){
   if(snap.exists()){
     const d=snap.data();
     mechanics = d.mechanics || DEFAULT_NAMES.map(n=>({name:n,status:'working'}));
+    manualAvgMin = (d.manualAvgMin!==undefined) ? d.manualAvgMin : null;
   } else {
     mechanics = DEFAULT_NAMES.map(n=>({name:n,status:'working'}));
-    await setDoc(settingsRef(),{mechanics});
+    await setDoc(settingsRef(),{mechanics, manualAvgMin:null});
   }
 }
 
@@ -493,6 +498,17 @@ function subscribeVehicles(){
   });
 }
 
+function subscribeSettings(){
+  return onSnapshot(settingsRef(), snap=>{
+    if(snap.exists()){
+      const d=snap.data();
+      if(d.mechanics) mechanics = d.mechanics;
+      manualAvgMin = (d.manualAvgMin!==undefined) ? d.manualAvgMin : null;
+      render();
+    }
+  });
+}
+
 function updateSync(ok){
   const dot=document.getElementById('sync-dot');
   dot.style.background = ok ? 'var(--green)' : 'var(--red)';
@@ -507,11 +523,12 @@ function render(){
   mechanics.forEach((m,i)=>{
     const myActive = Object.values(activeVehicles).find(v=>v.mechanicIdx===i)||null;
     const myDone   = completedList.filter(v=>v.mechanicIdx===i);
-    if(myActive) totalActive++;
-    totalDone += myDone.length;
+    const activeIsOff = myActive ? isOffWork(myActive.work) : false;
+    if(myActive && !activeIsOff) totalActive++;
+    totalDone += myDone.filter(c=>!isOffWork(c.work)).length;
 
     const card=document.createElement('div');
-    let cardCls='mechanic-card'+(myActive?' has-active':'')+(m.status==='holiday'?' holiday':'')+(m.status==='halfday'?' halfday':'');
+    let cardCls='mechanic-card'+(myActive?' has-active':'')+(m.status==='holiday'?' holiday':'');
     const workText = myActive ? (myActive.work||'') : '';
     if(workText.includes('휴무'))      cardCls+=' work-holiday';
     else if(workText.includes('하루')) cardCls+=' work-halfday';
@@ -519,23 +536,24 @@ function render(){
 
     let badgeClass='badge ', badgeText='대기';
     if(m.status==='holiday'){badgeClass+='badge-holiday';badgeText='휴무';}
-    else if(m.status==='halfday'){badgeClass+='badge-halfday';badgeText='반차';}
     else if(myActive && workText.includes('휴무')){badgeClass+='badge-active';badgeText='휴무';}
     else if(myActive && workText.includes('하루')){badgeClass+='badge-active';badgeText='하루';}
     else if(myActive){badgeClass+='badge-active';badgeText='진행중';}
     else{badgeClass+='badge-wait';}
 
+    const myDoneJobs = myDone.filter(c=>!isOffWork(c.work)).length;
     let innerHtml=`
       <div class="card-header">
         <div class="card-header-left">
           <div class="mech-name">${m.name}</div>
-          <div class="mech-count">완료 ${myDone.length}대</div>
+          <div class="mech-count">완료 ${myDoneJobs}대</div>
         </div>
         <span class="${badgeClass}">${badgeText}</span>
       </div>
     `;
 
     if(m.status!=='holiday'){
+      innerHtml+=`<div class="card-body">`;
       if(myActive){
         const isOff = workText.includes('휴무') || workText.includes('하루');
         const elapsed = (!isOff && myActive.createdAt) ? fmtDuration(Date.now()-myActive.createdAt) : '';
@@ -557,6 +575,7 @@ function render(){
         innerHtml+=`<div class="no-vehicle">진행 중인 차량 없음</div>`;
       }
 
+      innerHtml+=`<div class="card-scroll">`;
       if(myDone.length>0){
         innerHtml+=`
           <div class="comp-section">
@@ -584,10 +603,11 @@ function render(){
           </div>
         `;
       }
-
+      innerHtml+=`</div>`;
       innerHtml+=`<button class="add-row" data-act="add" data-idx="${i}">+ 차량 입고 등록</button>`;
+      innerHtml+=`</div>`;
     } else {
-      innerHtml+=`<div style="padding:20px;text-align:center;color:var(--red);font-size:14px">휴무일</div>`;
+      innerHtml+=`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--red);font-size:24px;font-weight:900">휴무일</div>`;
     }
 
     card.innerHTML=innerHtml;
@@ -598,17 +618,21 @@ function render(){
   document.getElementById('s-done').textContent=totalDone;
   document.getElementById('s-total').textContent=totalActive+totalDone;
 
-  const durations = completedList
-    .filter(c=>{
-      const off=(c.work||'').includes('휴무')||(c.work||'').includes('하루');
-      return !off && c.completedAt && c.createdAt && (c.completedAt-c.createdAt)>0;
-    })
-    .map(c=>c.completedAt-c.createdAt);
-  if(durations.length>0){
-    const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
-    document.getElementById('s-avg').textContent = fmtDuration(avg);
+  if(manualAvgMin!=null && manualAvgMin!==''){
+    document.getElementById('s-avg').textContent = fmtDuration(manualAvgMin*60000);
   } else {
-    document.getElementById('s-avg').textContent = '-';
+    const durations = completedList
+      .filter(c=>{
+        const off=(c.work||'').includes('휴무')||(c.work||'').includes('하루');
+        return !off && c.completedAt && c.createdAt && (c.completedAt-c.createdAt)>0;
+      })
+      .map(c=>c.completedAt-c.createdAt);
+    if(durations.length>0){
+      const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
+      document.getElementById('s-avg').textContent = fmtDuration(avg);
+    } else {
+      document.getElementById('s-avg').textContent = '-';
+    }
   }
 }
 
@@ -721,19 +745,21 @@ function openSettings(){
   const grid=document.getElementById('names-grid');
   grid.innerHTML='';
   mechanics.forEach((m,i)=>{
+    const st = (m.status==='holiday') ? 'holiday' : 'working';
     const row=document.createElement('div');
     row.className='name-row';
     row.innerHTML=`
       <label>${i+1}번 기사</label>
       <input class="form-input" id="sn-${i}" value="${m.name}" style="padding:7px 10px;font-size:13px">
       <select class="form-input" id="ss-${i}" style="padding:6px 10px;font-size:12px">
-        <option value="working"${m.status==='working'?' selected':''}>근무</option>
-        <option value="holiday"${m.status==='holiday'?' selected':''}>휴무</option>
-        <option value="halfday"${m.status==='halfday'?' selected':''}>반차</option>
+        <option value="working"${st==='working'?' selected':''}>근무</option>
+        <option value="holiday"${st==='holiday'?' selected':''}>휴무</option>
       </select>
     `;
     grid.appendChild(row);
   });
+  const avgInput=document.getElementById('s-avg-input');
+  if(avgInput) avgInput.value = (manualAvgMin!=null && manualAvgMin!=='') ? manualAvgMin : '';
   openModal('settings-overlay');
 };
 
@@ -744,11 +770,14 @@ async function saveSettings(){
     if(ni) m.name=ni.value.trim()||m.name;
     if(si) m.status=si.value;
   });
+  const avgInput=document.getElementById('s-avg-input');
+  const raw = avgInput ? avgInput.value.trim() : '';
+  manualAvgMin = (raw==='') ? null : Math.max(0, parseInt(raw)||0);
   try{
-    await setDoc(settingsRef(),{mechanics});
+    await setDoc(settingsRef(),{mechanics, manualAvgMin});
     closeModal('settings-overlay');
     render();
-    showToast('기사 설정 저장 완료','success');
+    showToast('설정 저장 완료','success');
   }catch(e){showToast('저장 실패: '+e.message,'error');}
 };
 
@@ -881,6 +910,7 @@ function bindButtons(){
     await loadSettings();
     render();
     subscribeVehicles();
+    subscribeSettings();
     document.getElementById('loading-screen').classList.add('hide');
     setInterval(()=>{
       const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay']
