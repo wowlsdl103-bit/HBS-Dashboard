@@ -33,15 +33,18 @@
   .header-title{font-size:28px;font-weight:900;color:#fff;letter-spacing:-0.5px;line-height:1.2}
   .header-title .accent{color:var(--blue)}
   .header-date{font-size:15px;color:var(--text2);margin-top:4px;font-family:var(--mono)}
-  .header-center{display:flex;align-items:center;gap:14px}
-  .stat-pill{display:flex;flex-direction:column;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:8px 20px;min-width:84px}
-  .stat-pill .num{font-size:30px;font-weight:900;font-family:var(--mono);line-height:1}
-  .stat-pill .lbl{font-size:12px;color:var(--text3);margin-top:4px}
+  .header-center{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
+  .stat-pill{display:flex;flex-direction:column;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:7px 14px;min-width:70px}
+  .stat-pill .num{font-size:26px;font-weight:900;font-family:var(--mono);line-height:1}
+  .stat-pill .lbl{font-size:11px;color:var(--text3);margin-top:4px;white-space:nowrap}
   .stat-pill.active .num{color:var(--green)}
   .stat-pill.done .num{color:var(--blue)}
   .stat-pill.total .num{color:var(--yellow)}
-  .stat-pill.avg{min-width:104px}
-  .stat-pill.avg .num{color:#b388ff;font-size:24px}
+  .stat-pill.off .num{color:#ff6b6b}
+  .stat-pill.day .num{color:var(--yellow)}
+  .stat-pill.off .num,.stat-pill.day .num{font-size:22px}
+  .stat-pill.avg{min-width:92px}
+  .stat-pill.avg .num{color:#b388ff;font-size:22px}
   .header-right{display:flex;gap:8px;align-items:center}
   .clock{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--yellow);background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 16px;letter-spacing:2px}
   .sync-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;margin-right:4px}
@@ -287,6 +290,8 @@
     <div class="stat-pill active"><div class="num" id="s-active">0</div><div class="lbl">진행중</div></div>
     <div class="stat-pill done"><div class="num" id="s-done">0</div><div class="lbl">완료</div></div>
     <div class="stat-pill total"><div class="num" id="s-total">0</div><div class="lbl">총 입고</div></div>
+    <div class="stat-pill off"><div class="num" id="s-off">0</div><div class="lbl">휴무자</div></div>
+    <div class="stat-pill day"><div class="num" id="s-day">0</div><div class="lbl">하루 작업</div></div>
     <div class="stat-pill avg"><div class="num" id="s-avg">-</div><div class="lbl">평균 작업시간</div></div>
   </div>
   <div class="header-right">
@@ -548,7 +553,7 @@ function updateSync(ok){
 function render(){
   const grid=document.getElementById('mechanic-grid');
   grid.innerHTML='';
-  let totalActive=0, totalDone=0;
+  let totalActive=0, totalDone=0, offCount=0, dayCount=0;
 
   mechanics.forEach((m,i)=>{
     const myActive = Object.values(activeVehicles).find(v=>v.mechanicIdx===i)||null;
@@ -557,9 +562,12 @@ function render(){
     if(myActive && !activeIsOff) totalActive++;
     totalDone += myDone.filter(c=>!isOffWork(c.work)).length;
 
+    const workText = myActive ? (myActive.work||'') : '';
+    if(m.status==='holiday' || workText.includes('휴무')) offCount++;
+    if(workText.includes('하루')) dayCount++;
+
     const card=document.createElement('div');
     let cardCls='mechanic-card'+(myActive?' has-active':'')+(m.status==='holiday'?' holiday':'');
-    const workText = myActive ? (myActive.work||'') : '';
     if(workText.includes('휴무'))      cardCls+=' work-holiday';
     else if(workText.includes('하루')) cardCls+=' work-halfday';
     card.className=cardCls;
@@ -647,6 +655,8 @@ function render(){
   document.getElementById('s-active').textContent=totalActive;
   document.getElementById('s-done').textContent=totalDone;
   document.getElementById('s-total').textContent=totalActive+totalDone;
+  document.getElementById('s-off').textContent=offCount+'명';
+  document.getElementById('s-day').textContent=dayCount+'명';
 
   if(manualAvgMin!=null && manualAvgMin!==''){
     document.getElementById('s-avg').textContent = fmtDuration(manualAvgMin*60000);
