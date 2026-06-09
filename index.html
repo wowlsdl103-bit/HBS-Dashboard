@@ -297,6 +297,8 @@
   <div class="header-right">
     <span class="sync-dot" id="sync-dot"></span>
     <div class="clock" id="clock">00:00:00</div>
+    <button class="btn" id="btn-user"><span id="device-user-label">사용자 미지정</span></button>
+    <button class="btn" id="btn-history">📋 이력</button>
     <button class="btn" id="btn-settings">⚙ 설정</button>
     <button class="btn btn-primary" id="btn-export">📊 엑셀 마감</button>
     <button class="btn btn-danger" id="btn-reset-open">초기화</button>
@@ -393,6 +395,41 @@
 </div>
 </div>
 
+<!-- ── 사용자 지정 MODAL ── -->
+<div class="overlay" id="user-overlay">
+<div class="modal">
+  <h3>👤 이 기기 사용자 지정</h3>
+  <p style="color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:14px">이 기기에서 등록·수정·완료하는 작업에 아래 사용자 이름이 기록됩니다. 한 번만 설정하면 됩니다.</p>
+  <div class="form-row">
+    <label class="form-label">사용자 선택</label>
+    <select class="form-input" id="user-select"></select>
+  </div>
+  <div class="form-row" id="master-pw-row" style="display:none">
+    <label class="form-label" style="color:#ff6b6b">마스터 암호</label>
+    <input class="form-input" id="user-master-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
+  </div>
+  <div class="form-row">
+    <label class="form-label">또는 직접 입력 (실명을 기입해주세요)</label>
+    <input class="form-input" id="user-custom" placeholder="예) 홍길동">
+  </div>
+  <div class="modal-btns">
+    <button class="btn btn-success" id="btn-user-save">저장</button>
+    <button class="btn btn-danger" id="btn-user-cancel">취소</button>
+  </div>
+</div>
+</div>
+
+<!-- ── 이력 MODAL ── -->
+<div class="overlay" id="history-overlay">
+<div class="modal" style="width:560px">
+  <h3>📋 오늘 작업 이력</h3>
+  <div id="history-list" style="max-height:60vh;overflow-y:auto"></div>
+  <div class="modal-btns">
+    <button class="btn" id="btn-history-close">닫기</button>
+  </div>
+</div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -465,6 +502,7 @@ let activeVehicles = {}; // docId → {mechanicIdx, car, work, eta}
 let completedList  = []; // [{mechanicIdx, car, work, eta, doneTime, docId}]
 let editTarget = null;   // {type:'active'|'completed', docId}
 let manualAvgMin = null; // 수동 설정 평균 작업시간(분), null이면 자동계산
+let deviceUser = localStorage.getItem('bh_device_user') || ''; // 이 기기 사용자
 
 /* ════ 날짜 키 ════ */
 function todayKey(){
@@ -499,6 +537,25 @@ function fillSelect(el, selected){
 /* ════ Firestore 경로 ════ */
 const settingsRef = ()=> doc(db,'settings','mechanics');
 const vehiclesColl= ()=> `vehicles_${todayKey()}`;
+const logsColl    = ()=> `logs_${todayKey()}`;
+
+/* ════ 이력 기록 ════ */
+async function addLog(action, mechanicName, car, detail){
+  try{
+    const ref=doc(collection(db, logsColl()));
+    const now=new Date();
+    const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+    await setDoc(ref,{
+      action,                       // '등록' / '수정' / '완료' / '삭제'
+      user: deviceUser||'(미지정)',  // 누가 (기기 사용자)
+      mechanic: mechanicName||'',    // 어느 기사 칸
+      car: car||'',                  // 차량번호
+      detail: detail||'',            // 부가 설명
+      time: timeStr,
+      ts: Date.now()
+    });
+  }catch(e){ /* 로그 실패는 조용히 무시 (본 작업 방해 안 함) */ }
+}
 
 /* ════ 로드 ════ */
 async function loadSettings(){
@@ -560,7 +617,7 @@ function render(){
     const myDone   = completedList.filter(v=>v.mechanicIdx===i);
     const activeIsOff = myActive ? isOffWork(myActive.work) : false;
     if(myActive && !activeIsOff) totalActive++;
-    totalDone += myDone.filter(c=>!isOffWork(c.work)).length;
+    totalDone += myDone.filter(c=>!isHoliday(c.work)).length;
 
     const workText = myActive ? (myActive.work||'') : '';
     if(m.status==='holiday' || workText.includes('휴무')) offCount++;
@@ -579,7 +636,7 @@ function render(){
     else if(myActive){badgeClass+='badge-active';badgeText='진행중';}
     else{badgeClass+='badge-wait';}
 
-    const myDoneJobs = myDone.filter(c=>!isOffWork(c.work)).length;
+    const myDoneJobs = myDone.filter(c=>!isHoliday(c.work)).length;
     let innerHtml=`
       <div class="card-header">
         <div class="card-header-left">
@@ -615,10 +672,13 @@ function render(){
 
       innerHtml+=`<div class="card-scroll">`;
       if(myDone.length>0){
+        const offDone = myDone.filter(c=>(c.work||'').includes('휴무')).length;
+        let extra='';
+        if(offDone>0) extra+=` <span style="color:#ff6b6b">휴무 ${offDone}</span>`;
         innerHtml+=`
           <div class="comp-section">
             <div class="comp-header">
-              <span class="comp-title">완료 <b>${myDone.length}</b>대</span>
+              <span class="comp-title">완료 <b>${myDoneJobs}</b>대${extra}</span>
               <button class="comp-toggle" data-act="toggle">▼ 더보기</button>
             </div>
             <div class="comp-list">
@@ -733,6 +793,7 @@ async function submitAdd(){
     });
     closeModal('add-overlay');
     showToast(`${car} 입고 등록 완료`,'success');
+    addLog('등록', mechanics[idx]?.name, car, work);
   }catch(e){showToast('저장 실패: '+e.message,'error');}
 };
 
@@ -777,6 +838,8 @@ async function submitEdit(){
     await setDoc(ref,payload);
     closeModal('edit-overlay');
     showToast(`${car} 정보 저장 완료`,'success');
+    const becameDone = (status==='done' && editTarget.type==='active');
+    addLog(becameDone?'완료':'수정', mechanics[orig.mechanicIdx]?.name, car, work);
   }catch(e){showToast('저장 실패: '+e.message,'error');}
 };
 
@@ -828,10 +891,80 @@ async function doReset(){
     const snap=await getDocs(coll);
     const dels=snap.docs.map(d=>deleteDoc(doc(db,vehiclesColl(),d.id)));
     await Promise.all(dels);
+    const lsnap=await getDocs(collection(db,logsColl()));
+    await Promise.all(lsnap.docs.map(d=>deleteDoc(doc(db,logsColl(),d.id))));
     closeModal('reset-overlay');
     showToast('오늘 데이터 초기화 완료','success');
   }catch(e){showToast('초기화 실패: '+e.message,'error');}
 };
+
+/* ════ 기기 사용자 지정 ════ */
+function updateUserLabel(){
+  const lbl=document.getElementById('device-user-label');
+  if(deviceUser){ lbl.textContent='👤 '+deviceUser; lbl.parentElement.style.borderColor='var(--green)'; lbl.style.color='var(--green)'; }
+  else{ lbl.textContent='사용자 미지정'; lbl.parentElement.style.borderColor='var(--red)'; lbl.style.color='#ff6b6b'; }
+}
+const USER_OPTIONS = ['프론트1','프론트2','프론트3','프론트4','프론트5','메인','정비','마스터'];
+const MASTER_PW = '1007';
+function openUserModal(){
+  const sel=document.getElementById('user-select');
+  sel.innerHTML='<option value="">— 사용자 선택 —</option>';
+  USER_OPTIONS.forEach(name=>{
+    const o=document.createElement('option');o.value=name;o.textContent=name;
+    if(name===deviceUser)o.selected=true;
+    sel.appendChild(o);
+  });
+  document.getElementById('user-custom').value = (deviceUser && !USER_OPTIONS.includes(deviceUser)) ? deviceUser : '';
+  document.getElementById('user-master-pw').value='';
+  toggleMasterPw();
+  openModal('user-overlay');
+}
+function toggleMasterPw(){
+  const sel=document.getElementById('user-select').value;
+  const row=document.getElementById('master-pw-row');
+  row.style.display = (sel==='마스터') ? 'block' : 'none';
+}
+function saveUser(){
+  const custom=document.getElementById('user-custom').value.trim();
+  const sel=document.getElementById('user-select').value;
+  const name = custom || sel;
+  if(!name){ alert('사용자를 선택하거나 실명을 입력해주세요'); return; }
+  if(sel==='마스터' && !custom){
+    const pw=document.getElementById('user-master-pw').value.trim();
+    if(pw!==MASTER_PW){ alert('마스터 암호가 올바르지 않습니다'); return; }
+  }
+  deviceUser=name;
+  localStorage.setItem('bh_device_user', name);
+  updateUserLabel();
+  closeModal('user-overlay');
+  showToast('이 기기 사용자: '+name,'success');
+}
+
+/* ════ 이력 보기 ════ */
+async function openHistory(){
+  const box=document.getElementById('history-list');
+  box.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">불러오는 중...</div>';
+  openModal('history-overlay');
+  try{
+    const snap=await getDocs(collection(db, logsColl()));
+    const logs=[];
+    snap.forEach(d=>logs.push(d.data()));
+    logs.sort((a,b)=>(b.ts||0)-(a.ts||0));
+    if(logs.length===0){ box.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">오늘 기록된 이력이 없습니다.</div>'; return; }
+    const color={'등록':'#2979ff','수정':'#ffd600','완료':'#00e676','삭제':'#ff1744'};
+    box.innerHTML=logs.map(l=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--border)">
+        <span style="font-family:var(--mono);font-size:12px;color:var(--text3);flex-shrink:0">${l.time||''}</span>
+        <span style="font-size:12px;font-weight:700;color:${color[l.action]||'#fff'};flex-shrink:0;min-width:34px">${l.action||''}</span>
+        <span style="font-size:13px;color:var(--text);flex:1;min-width:0">${esc(l.car||'')} <span style="color:var(--text3)">${esc(l.detail||'')}</span></span>
+        <span style="font-size:12px;color:var(--text2);flex-shrink:0">👤 ${esc(l.user||'')}</span>
+      </div>
+    `).join('');
+  }catch(e){
+    box.innerHTML='<div style="color:#ff6b6b;text-align:center;padding:20px">이력 로딩 실패: '+e.message+'</div>';
+  }
+}
+
 
 /* ════ 엑셀 마감 (기사별 작업 내역 다운로드) ════ */
 function minutesOf(c){
@@ -840,6 +973,7 @@ function minutesOf(c){
   return null;
 }
 function isOffWork(w){ w=w||''; return w.includes('휴무')||w.includes('하루'); }
+function isHoliday(w){ w=w||''; return w.includes('휴무'); }
 
 function exportExcel(){
   if(typeof window.XLSX==='undefined'){ showToast('엑셀 모듈 로딩 중 — 잠시 후 다시 시도','error'); return; }
@@ -906,7 +1040,7 @@ function showToast(msg,type=''){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay'].forEach(id=>closeModal(id));
+  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay'].forEach(id=>closeModal(id));
   if(e.key==='Enter'){
     if(document.getElementById('add-overlay').classList.contains('open')) submitAdd();
     else if(document.getElementById('edit-overlay').classList.contains('open')) submitEdit();
@@ -939,6 +1073,12 @@ function bindButtons(){
   document.getElementById('btn-settings-cancel').onclick= ()=>closeModal('settings-overlay');
   document.getElementById('btn-reset-confirm').onclick = doReset;
   document.getElementById('btn-reset-cancel').onclick  = ()=>closeModal('reset-overlay');
+  document.getElementById('btn-user').onclick          = openUserModal;
+  document.getElementById('user-select').onchange      = toggleMasterPw;
+  document.getElementById('btn-user-save').onclick     = saveUser;
+  document.getElementById('btn-user-cancel').onclick   = ()=>closeModal('user-overlay');
+  document.getElementById('btn-history').onclick       = openHistory;
+  document.getElementById('btn-history-close').onclick = ()=>closeModal('history-overlay');
 }
 
 /* ════ BOOT ════ */
@@ -946,14 +1086,18 @@ function bindButtons(){
   updateDate(); tick(); setInterval(tick,1000);
   bindButtons();
   bindGridEvents();
+  updateUserLabel();
   try{
     await loadSettings();
     render();
     subscribeVehicles();
     subscribeSettings();
     document.getElementById('loading-screen').classList.add('hide');
+    if(!deviceUser){
+      setTimeout(openUserModal, 600);
+    }
     setInterval(()=>{
-      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay']
+      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay']
         .some(id=>document.getElementById(id).classList.contains('open'));
       if(!modalOpen) render();
     }, 30000);
