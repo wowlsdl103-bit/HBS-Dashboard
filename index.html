@@ -769,6 +769,7 @@ function bindGridEvents(){
 
 /* ════ 입고 등록 ════ */
 function openAdd(idx){
+  if(!requireUser()) return;
   document.getElementById('add-idx').value=idx;
   document.getElementById('a-car').value='';
   document.getElementById('a-work').value='';
@@ -779,6 +780,7 @@ function openAdd(idx){
 };
 
 async function submitAdd(){
+  if(!requireUser()) return;
   const idx=parseInt(document.getElementById('add-idx').value);
   const car=document.getElementById('a-car').value.trim();
   const work=document.getElementById('a-work').value.trim();
@@ -799,6 +801,7 @@ async function submitAdd(){
 
 /* ════ 수정/완료 ════ */
 function openEdit(type,docId){
+  if(!requireUser()) return;
   editTarget={type,docId};
   const v = type==='active' ? activeVehicles[docId] : completedList.find(c=>c.docId===docId);
   if(!v)return;
@@ -812,6 +815,7 @@ function openEdit(type,docId){
 };
 
 async function submitEdit(){
+  if(!requireUser()) return;
   const docId=document.getElementById('edit-key').value;
   const car=document.getElementById('e-car').value.trim();
   const work=document.getElementById('e-work').value.trim();
@@ -903,6 +907,13 @@ function updateUserLabel(){
   const lbl=document.getElementById('device-user-label');
   if(deviceUser){ lbl.textContent='👤 '+deviceUser; lbl.parentElement.style.borderColor='var(--green)'; lbl.style.color='var(--green)'; }
   else{ lbl.textContent='사용자 미지정'; lbl.parentElement.style.borderColor='var(--red)'; lbl.style.color='#ff6b6b'; }
+}
+/* 사용자 미지정이면 차단하고 지정 창을 띄움. 통과하면 true */
+function requireUser(){
+  if(deviceUser) return true;
+  showToast('먼저 이 기기 사용자를 지정해주세요','error');
+  openUserModal();
+  return false;
 }
 const USER_OPTIONS = ['프론트1','프론트2','프론트3','프론트4','프론트5','메인','정비','마스터'];
 const MASTER_PW = '1007';
