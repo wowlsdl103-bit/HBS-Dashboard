@@ -96,6 +96,19 @@
   .mechanic-card.work-halfday .eta-time{color:#ffe066}
   .mechanic-card.work-halfday .badge-active{background:rgba(255,214,0,.15);color:#ffe066;border-color:rgba(255,214,0,.45)}
 
+  /* ── 기사 상태 '사고수리' → 카드 보라색 (차량 등록 가능) ── */
+  .mechanic-card.accident{border:2px solid #9d6bff !important;background:rgba(40,20,70,.95) !important}
+  .mechanic-card.accident .card-header{background:rgba(157,107,255,.18)}
+  .mechanic-card.accident .mech-name{color:#cbb0ff}
+  .mechanic-card.accident .mech-count{color:#a98fd6}
+  .mechanic-card.accident .active-row{background:rgba(157,107,255,.13) !important;border-color:rgba(157,107,255,.5) !important}
+  .mechanic-card.accident .active-row .pulse{background:#b388ff}
+  .mechanic-card.accident .active-car{color:#cbb0ff}
+  .mechanic-card.accident .active-work{color:#b49ee0}
+  .mechanic-card.accident .eta-time{color:#ffd600}
+  .mechanic-card.accident .badge-active{background:rgba(157,107,255,.18);color:#cbb0ff;border-color:rgba(157,107,255,.5)}
+  .badge-accident{background:rgba(157,107,255,.18);color:#cbb0ff;border:1px solid rgba(157,107,255,.55)}
+
   .card-header{
     display:flex;align-items:center;justify-content:space-between;
     padding:14px 18px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border);flex-shrink:0;
@@ -110,12 +123,18 @@
   .badge-halfday{background:rgba(255,214,0,.12);color:var(--yellow);border:1px solid rgba(255,214,0,.4)}
 
   /* Active vehicle row */
+  .active-stack{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
+  .active-stack.scroll-limit{max-height:48%;overflow-y:auto}
+  .active-stack::-webkit-scrollbar{width:4px}
+  .active-stack::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
   .active-row{
     margin:12px 14px 0;padding:14px 16px;
     background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.35);
     border-radius:10px;cursor:pointer;transition:background .18s;
     display:flex;align-items:center;justify-content:space-between;gap:10px;
   }
+  .active-stack .active-row{margin:0 14px}
+  .active-stack .active-row:first-child{margin-top:12px}
   .active-row:hover{background:rgba(0,230,118,.14);border-color:rgba(0,230,118,.55)}
   .active-row .pulse{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
   .active-left{flex:1;min-width:0}
@@ -126,6 +145,14 @@
   .active-right{text-align:right;flex-shrink:0}
   .eta-label{font-size:12px;color:var(--text3)}
   .eta-time{font-size:26px;font-weight:900;color:var(--yellow);font-family:var(--mono);line-height:1.1}
+
+  /* 2대 이상일 때 컴팩트하게 — 4대까지 한눈에 */
+  .active-row.compact{padding:9px 13px}
+  .active-row.compact .active-car{font-size:19px}
+  .active-row.compact .active-work{font-size:13px;margin-top:2px}
+  .active-row.compact .active-elapsed{font-size:11px;margin-top:2px}
+  .active-row.compact .eta-time{font-size:20px}
+  .active-row.compact .eta-label{font-size:10px}
 
   .no-vehicle{padding:24px 12px;text-align:center;color:var(--text3);font-size:16px}
 
@@ -318,7 +345,7 @@
   <input type="hidden" id="add-idx">
   <div class="form-row">
     <label class="form-label">차량번호</label>
-    <input class="form-input" id="a-car" placeholder="예) 123가4567  /  경기 12가 3456" maxlength="20">
+    <input class="form-input" id="a-car" placeholder="예) GN7-123가 1234  /  모델명-00가 0000" maxlength="20">
   </div>
   <div class="form-row">
     <label class="form-label">작업 내용</label>
@@ -362,6 +389,26 @@
   <div class="modal-btns">
     <button class="btn btn-success" id="btn-edit-submit">저장</button>
     <button class="btn btn-danger" id="btn-edit-cancel">취소</button>
+  </div>
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border2);text-align:center">
+    <button class="btn" id="btn-edit-delete" style="border-color:rgba(255,23,68,.4);color:#ff6b6b;width:100%">🗑 이 차량 삭제</button>
+  </div>
+</div>
+</div>
+
+<!-- ── 삭제 확인 MODAL ── -->
+<div class="overlay" id="delete-overlay">
+<div class="modal">
+  <h3 style="color:#ff6b6b">🗑 차량 삭제 확인</h3>
+  <p style="color:#ff6b6b;font-size:14px;line-height:1.6;margin-bottom:14px">정말 이 차량 기록을 삭제하시겠습니까?<br><span style="color:var(--text2)">삭제된 데이터는 복구할 수 없습니다.</span></p>
+  <div id="delete-target-info" style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:14px;color:var(--text)"></div>
+  <div class="form-row">
+    <label class="form-label" style="color:#ff6b6b">삭제 암호</label>
+    <input class="form-input" id="delete-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
+  </div>
+  <div class="modal-btns">
+    <button class="btn btn-danger" id="btn-delete-confirm">삭제 실행</button>
+    <button class="btn" id="btn-delete-cancel">취소</button>
   </div>
 </div>
 </div>
@@ -613,27 +660,29 @@ function render(){
   let totalActive=0, totalDone=0, offCount=0, dayCount=0;
 
   mechanics.forEach((m,i)=>{
-    const myActive = Object.values(activeVehicles).find(v=>v.mechanicIdx===i)||null;
+    const myActives = Object.values(activeVehicles).filter(v=>v.mechanicIdx===i)
+      .sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(0,4);
     const myDone   = completedList.filter(v=>v.mechanicIdx===i);
-    const activeIsOff = myActive ? isOffWork(myActive.work) : false;
-    if(myActive && !activeIsOff) totalActive++;
+    // 통계: 진행중 차량 중 휴무/하루가 아닌 것만 카운트
+    myActives.forEach(v=>{ if(!isOffWork(v.work)) totalActive++; });
     totalDone += myDone.filter(c=>!isHoliday(c.work)).length;
 
-    const workText = myActive ? (myActive.work||'') : '';
-    if(m.status==='holiday' || workText.includes('휴무')) offCount++;
-    if(workText.includes('하루')) dayCount++;
+    // 카드 색상/배지 판정은 myActives 배열 기준
+    if(m.status==='holiday' || myActives.some(v=>(v.work||'').includes('휴무'))) offCount++;
+    if(myActives.some(v=>(v.work||'').includes('하루'))) dayCount++;
 
     const card=document.createElement('div');
-    let cardCls='mechanic-card'+(myActive?' has-active':'')+(m.status==='holiday'?' holiday':'');
-    if(workText.includes('휴무'))      cardCls+=' work-holiday';
-    else if(workText.includes('하루')) cardCls+=' work-halfday';
+    let cardCls='mechanic-card'+(myActives.length?' has-active':'')+(m.status==='holiday'?' holiday':'')+(m.status==='accident'?' accident':'');
+    if(myActives.some(v=>(v.work||'').includes('휴무')))      cardCls+=' work-holiday';
+    else if(myActives.some(v=>(v.work||'').includes('하루'))) cardCls+=' work-halfday';
     card.className=cardCls;
 
     let badgeClass='badge ', badgeText='대기';
     if(m.status==='holiday'){badgeClass+='badge-holiday';badgeText='휴무';}
-    else if(myActive && workText.includes('휴무')){badgeClass+='badge-active';badgeText='휴무';}
-    else if(myActive && workText.includes('하루')){badgeClass+='badge-active';badgeText='하루';}
-    else if(myActive){badgeClass+='badge-active';badgeText='진행중';}
+    else if(m.status==='accident'){badgeClass+='badge-accident';badgeText='사고수리';}
+    else if(myActives.some(v=>(v.work||'').includes('휴무'))){badgeClass+='badge-active';badgeText='휴무';}
+    else if(myActives.some(v=>(v.work||'').includes('하루'))){badgeClass+='badge-active';badgeText='하루';}
+    else if(myActives.length){badgeClass+='badge-active';badgeText='진행 '+myActives.length;}
     else{badgeClass+='badge-wait';}
 
     const myDoneJobs = myDone.filter(c=>!isHoliday(c.work)).length;
@@ -649,23 +698,27 @@ function render(){
 
     if(m.status!=='holiday'){
       innerHtml+=`<div class="card-body">`;
-      if(myActive){
-        const isOff = workText.includes('휴무') || workText.includes('하루');
-        const elapsed = (!isOff && myActive.createdAt) ? fmtDuration(Date.now()-myActive.createdAt) : '';
-        innerHtml+=`
-          <div class="active-row" data-act="edit" data-type="active" data-id="${myActive.docId}">
-            <div class="pulse"></div>
-            <div class="active-left">
-              <div class="active-car">${esc(myActive.car)}</div>
-              <div class="active-work">${esc(myActive.work)}</div>
-              ${elapsed?`<div class="active-elapsed"><i class="ti ti-clock-play" aria-hidden="true"></i> 작업 ${elapsed} 경과</div>`:''}
+      if(myActives.length){
+        innerHtml+=`<div class="active-stack${myActives.length>=3?' scroll-limit':''}">`;
+        myActives.forEach(av=>{
+          const isOff = (av.work||'').includes('휴무') || (av.work||'').includes('하루');
+          const elapsed = (!isOff && av.createdAt) ? fmtDuration(Date.now()-av.createdAt) : '';
+          innerHtml+=`
+            <div class="active-row${myActives.length>1?' compact':''}" data-act="edit" data-type="active" data-id="${av.docId}">
+              <div class="pulse"></div>
+              <div class="active-left">
+                <div class="active-car">${esc(av.car)}</div>
+                <div class="active-work">${esc(av.work)}</div>
+                ${elapsed?`<div class="active-elapsed">작업 ${elapsed} 경과</div>`:''}
+              </div>
+              <div class="active-right">
+                <div class="eta-label">완료 예정</div>
+                <div class="eta-time">${av.eta||''}</div>
+              </div>
             </div>
-            <div class="active-right">
-              <div class="eta-label">완료 예정</div>
-              <div class="eta-time">${myActive.eta||''}</div>
-            </div>
-          </div>
-        `;
+          `;
+        });
+        innerHtml+=`</div>`;
       } else {
         innerHtml+=`<div class="no-vehicle">진행 중인 차량 없음</div>`;
       }
@@ -787,6 +840,8 @@ async function submitAdd(){
   const eta=document.getElementById('a-eta').value;
   if(!car){alert('차량번호를 입력해주세요');return;}
   if(!work){alert('작업 내용을 입력해주세요');return;}
+  const curActive = Object.values(activeVehicles).filter(v=>v.mechanicIdx===idx).length;
+  if(curActive>=4){ alert('한 기사당 진행중 차량은 최대 4대까지 등록할 수 있습니다.'); return; }
   try{
     const newDoc=doc(collection(db,vehiclesColl()));
     await setDoc(newDoc,{
@@ -852,7 +907,7 @@ function openSettings(){
   const grid=document.getElementById('names-grid');
   grid.innerHTML='';
   mechanics.forEach((m,i)=>{
-    const st = (m.status==='holiday') ? 'holiday' : 'working';
+    const st = (m.status==='holiday'||m.status==='accident') ? m.status : 'working';
     const row=document.createElement('div');
     row.className='name-row';
     row.innerHTML=`
@@ -861,6 +916,7 @@ function openSettings(){
       <select class="form-input" id="ss-${i}" style="padding:6px 10px;font-size:12px">
         <option value="working"${st==='working'?' selected':''}>근무</option>
         <option value="holiday"${st==='holiday'?' selected':''}>휴무</option>
+        <option value="accident"${st==='accident'?' selected':''}>사고수리</option>
       </select>
     `;
     grid.appendChild(row);
@@ -901,6 +957,34 @@ async function doReset(){
     showToast('오늘 데이터 초기화 완료','success');
   }catch(e){showToast('초기화 실패: '+e.message,'error');}
 };
+
+/* ════ 차량 삭제 (암호 0070) ════ */
+const DELETE_PW = '0070';
+let deleteTarget = null; // {docId, car, work, mechanicName}
+function openDeleteModal(){
+  if(!editTarget) return;
+  const docId = editTarget.docId;
+  const v = editTarget.type==='active' ? activeVehicles[docId] : completedList.find(c=>c.docId===docId);
+  if(!v){ showToast('대상을 찾을 수 없습니다','error'); return; }
+  deleteTarget = { docId, car:v.car, work:v.work, mechanicName:mechanics[v.mechanicIdx]?.name||'' };
+  document.getElementById('delete-target-info').textContent =
+    `${deleteTarget.mechanicName} 기사 · ${deleteTarget.car} (${deleteTarget.work})`;
+  document.getElementById('delete-pw').value='';
+  closeModal('edit-overlay');
+  openModal('delete-overlay');
+}
+async function confirmDelete(){
+  const pw=document.getElementById('delete-pw').value.trim();
+  if(pw!==DELETE_PW){ alert('삭제 암호가 올바르지 않습니다'); return; }
+  if(!deleteTarget){ closeModal('delete-overlay'); return; }
+  try{
+    await deleteDoc(doc(db, vehiclesColl(), deleteTarget.docId));
+    addLog('삭제', deleteTarget.mechanicName, deleteTarget.car, deleteTarget.work);
+    closeModal('delete-overlay');
+    showToast(`${deleteTarget.car} 삭제 완료`,'success');
+    deleteTarget=null;
+  }catch(e){showToast('삭제 실패: '+e.message,'error');}
+}
 
 /* ════ 기기 사용자 지정 ════ */
 function updateUserLabel(){
@@ -1051,7 +1135,7 @@ function showToast(msg,type=''){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay'].forEach(id=>closeModal(id));
+  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay'].forEach(id=>closeModal(id));
   if(e.key==='Enter'){
     if(document.getElementById('add-overlay').classList.contains('open')) submitAdd();
     else if(document.getElementById('edit-overlay').classList.contains('open')) submitEdit();
@@ -1080,6 +1164,9 @@ function bindButtons(){
   document.getElementById('btn-add-cancel').onclick    = ()=>closeModal('add-overlay');
   document.getElementById('btn-edit-submit').onclick   = submitEdit;
   document.getElementById('btn-edit-cancel').onclick   = ()=>closeModal('edit-overlay');
+  document.getElementById('btn-edit-delete').onclick   = openDeleteModal;
+  document.getElementById('btn-delete-confirm').onclick = confirmDelete;
+  document.getElementById('btn-delete-cancel').onclick = ()=>closeModal('delete-overlay');
   document.getElementById('btn-settings-save').onclick = saveSettings;
   document.getElementById('btn-settings-cancel').onclick= ()=>closeModal('settings-overlay');
   document.getElementById('btn-reset-confirm').onclick = doReset;
@@ -1108,7 +1195,7 @@ function bindButtons(){
       setTimeout(openUserModal, 600);
     }
     setInterval(()=>{
-      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay']
+      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay']
         .some(id=>document.getElementById(id).classList.contains('open'));
       if(!modalOpen) render();
     }, 30000);
