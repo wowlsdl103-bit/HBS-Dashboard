@@ -11,7 +11,7 @@
   :root{
     --bg:#060d1f;--bg2:#0a1428;--bg3:#0d1a35;--bg4:#111f3e;
     --blue:#2979ff;--blue2:#1565c0;--green:#00e676;--green2:#00c853;
-    --yellow:#ffd600;--red:#ff1744;--gray:#546e7a;
+    --yellow:#ffd600;--red:#ff1744;--gray:#546e7a;--cyan:#00e5ff;
     --text:#e8eeff;--text2:#90a4c8;--text3:#3d5070;
     --border:#1a2a50;--border2:#243660;
     --card-bg:rgba(13,26,53,0.95);
@@ -45,6 +45,8 @@
   .stat-pill.off .num,.stat-pill.day .num{font-size:22px}
   .stat-pill.avg{min-width:92px}
   .stat-pill.avg .num{color:#b388ff;font-size:22px}
+  .stat-pill.dxavg{min-width:92px}
+  .stat-pill.dxavg .num{color:var(--cyan);font-size:22px}
   .header-right{display:flex;gap:8px;align-items:center}
   .clock{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--yellow);background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 16px;letter-spacing:2px}
   .sync-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;margin-right:4px}
@@ -57,6 +59,15 @@
   .btn-success:hover{background:rgba(0,230,118,.15);border-color:var(--green2);color:var(--green2)}
   .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
   .btn-primary:hover{background:var(--blue2);border-color:var(--blue2)}
+  /* 시간 멈춤 버튼/배너 */
+  .btn-pause-on{background:rgba(255,23,68,.18) !important;border-color:var(--red) !important;color:#ff8a8a !important;animation:blink 1.4s infinite}
+  .pause-banner{
+    display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+    background:rgba(60,8,18,.96);border:1px solid var(--red);border-radius:10px;
+    padding:9px 20px;font-size:14px;font-weight:700;color:#ff8a8a;z-index:2500;
+    box-shadow:0 8px 28px rgba(0,0,0,.6);letter-spacing:.3px;
+  }
+  .pause-banner.show{display:block;animation:blink 1.6s infinite}
 
   /* ─── GRID ─── */
   .grid-wrap{flex:1;padding:14px;background:var(--bg);overflow:hidden;min-height:0}
@@ -109,6 +120,18 @@
   .mechanic-card.accident .badge-active{background:rgba(157,107,255,.18);color:#cbb0ff;border-color:rgba(157,107,255,.5)}
   .badge-accident{background:rgba(157,107,255,.18);color:#cbb0ff;border:1px solid rgba(157,107,255,.55)}
 
+  /* ── 차량 상태 '진단중' → 해당 차량 행만 시안(아쿠아)색 ── */
+  .active-row.diagnosis{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.42)}
+  .active-row.diagnosis:hover{background:rgba(0,229,255,.15);border-color:rgba(0,229,255,.6)}
+  .active-row.diagnosis .pulse{background:var(--cyan)}
+  .active-row.diagnosis .active-car{color:var(--cyan)}
+  .active-row.diagnosis .active-work{color:#7fe4ff}
+  .active-row.diagnosis .active-elapsed{color:#8ec9dd}
+  .active-row.diagnosis .eta-time{color:var(--cyan)}
+  .row-tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;vertical-align:middle;margin-left:7px;letter-spacing:.2px;line-height:1.5}
+  .row-tag.dx{background:rgba(0,229,255,.16);color:var(--cyan);border:1px solid rgba(0,229,255,.5)}
+  .badge-dx{background:rgba(0,229,255,.14);color:var(--cyan);border:1px solid rgba(0,229,255,.5)}
+
   .card-header{
     display:flex;align-items:center;justify-content:space-between;
     padding:14px 18px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border);flex-shrink:0;
@@ -124,7 +147,7 @@
 
   /* Active vehicle row */
   .active-stack{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-  .active-stack.scroll-limit{max-height:48%;overflow-y:auto}
+  .active-stack.scroll-limit{max-height:74%;overflow-y:auto}
   .active-stack::-webkit-scrollbar{width:4px}
   .active-stack::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
   .active-row{
@@ -141,18 +164,20 @@
   .active-car{font-size:24px;font-weight:900;color:var(--green);font-family:var(--mono);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
   .active-work{font-size:15px;color:#6fd99a;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .active-elapsed{font-size:13px;color:var(--text2);margin-top:5px;font-family:var(--mono)}
+  .active-subtime{font-size:12px;color:var(--cyan);margin-top:2px;font-family:var(--mono);opacity:.92}
   .active-elapsed i{font-size:14px;vertical-align:-1px}
   .active-right{text-align:right;flex-shrink:0}
   .eta-label{font-size:12px;color:var(--text3)}
   .eta-time{font-size:26px;font-weight:900;color:var(--yellow);font-family:var(--mono);line-height:1.1}
 
-  /* 2대 이상일 때 컴팩트하게 — 4대까지 한눈에 */
-  .active-row.compact{padding:9px 13px}
-  .active-row.compact .active-car{font-size:19px}
+  /* 3대 이상일 때 컴팩트하게 — 4대까지 한눈에 (1~2대는 풀사이즈) */
+  .active-row.compact{padding:11px 14px}
+  .active-row.compact .active-car{font-size:21px}
   .active-row.compact .active-work{font-size:13px;margin-top:2px}
-  .active-row.compact .active-elapsed{font-size:11px;margin-top:2px}
-  .active-row.compact .eta-time{font-size:20px}
-  .active-row.compact .eta-label{font-size:10px}
+  .active-row.compact .active-elapsed{font-size:12px;margin-top:2px}
+  .active-row.compact .active-subtime{font-size:11px;margin-top:1px}
+  .active-row.compact .eta-time{font-size:22px}
+  .active-row.compact .eta-label{font-size:11px}
 
   .no-vehicle{padding:24px 12px;text-align:center;color:var(--text3);font-size:16px}
 
@@ -281,6 +306,8 @@
     .stat-pill .lbl{font-size:10px}
     .stat-pill.avg{min-width:0}
     .stat-pill.avg .num{font-size:16px}
+    .stat-pill.dxavg{min-width:0}
+    .stat-pill.dxavg .num{font-size:16px}
     .clock{font-size:18px;padding:6px 10px}
     .header-right{flex-wrap:wrap;gap:6px}
     .btn{padding:8px 12px;font-size:13px}
@@ -319,16 +346,19 @@
     <div class="stat-pill total"><div class="num" id="s-total">0</div><div class="lbl">총 입고</div></div>
     <div class="stat-pill off"><div class="num" id="s-off">0</div><div class="lbl">휴무자</div></div>
     <div class="stat-pill day"><div class="num" id="s-day">0</div><div class="lbl">하루 작업</div></div>
+    <div class="stat-pill dxavg"><div class="num" id="s-dxavg">-</div><div class="lbl">평균 진단시간</div></div>
     <div class="stat-pill avg"><div class="num" id="s-avg">-</div><div class="lbl">평균 작업시간</div></div>
   </div>
   <div class="header-right">
     <span class="sync-dot" id="sync-dot"></span>
     <div class="clock" id="clock">00:00:00</div>
     <button class="btn" id="btn-user"><span id="device-user-label">사용자 미지정</span></button>
+    <button class="btn" id="btn-pause">⏸ 시간 멈춤</button>
     <button class="btn" id="btn-history">📋 이력</button>
     <button class="btn" id="btn-settings">⚙ 설정</button>
     <button class="btn btn-primary" id="btn-export">📊 엑셀 마감</button>
-    <button class="btn btn-danger" id="btn-reset-open">초기화</button>
+    <button class="btn btn-success" id="btn-closeday-open">🌙 하루 마감</button>
+    <button class="btn btn-danger" id="btn-reset-open">전체 초기화</button>
   </div>
 </div>
 
@@ -354,6 +384,13 @@
   <div class="form-row">
     <label class="form-label">완료 예정 시간</label>
     <select class="form-input" id="a-eta"></select>
+  </div>
+  <div class="form-row">
+    <label class="form-label">상태</label>
+    <select class="form-input" id="a-status">
+      <option value="active">진행중</option>
+      <option value="diagnosis">진단중</option>
+    </select>
   </div>
   <div class="modal-btns">
     <button class="btn btn-success" id="btn-add-submit">입고 등록</button>
@@ -382,6 +419,7 @@
   <div class="form-row">
     <label class="form-label">상태</label>
     <select class="form-input" id="e-status">
+      <option value="diagnosis">진단중</option>
       <option value="active">진행중</option>
       <option value="done">완료</option>
     </select>
@@ -435,6 +473,10 @@
 <div class="modal">
   <h3>⚠️ 오늘 데이터 초기화</h3>
   <p style="color:#ff6b6b;font-size:14px;line-height:1.6;margin-bottom:8px">오늘의 모든 차량 데이터가 삭제됩니다.<br>기사 이름 및 상태 설정은 유지됩니다.</p>
+  <div class="form-row">
+    <label class="form-label" style="color:#ff6b6b">초기화 암호</label>
+    <input class="form-input" id="reset-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
+  </div>
   <div class="modal-btns">
     <button class="btn btn-danger" id="btn-reset-confirm">초기화 실행</button>
     <button class="btn" id="btn-reset-cancel">취소</button>
@@ -476,6 +518,25 @@
   </div>
 </div>
 </div>
+
+<!-- ── 시간 멈춤 MODAL ── -->
+<div class="overlay" id="pause-overlay">
+<div class="modal">
+  <h3 id="pause-modal-title">⏸ 전체 시간 멈춤</h3>
+  <p id="pause-modal-desc" style="color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:14px">진행중·진단중 모든 차량의 경과 시간이 멈춥니다.<br>재개하면 멈춘 시점부터 이어서 계산됩니다.</p>
+  <div class="form-row">
+    <label class="form-label">암호</label>
+    <input class="form-input" id="pause-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
+  </div>
+  <div class="modal-btns">
+    <button class="btn btn-primary" id="btn-pause-confirm">확인</button>
+    <button class="btn btn-danger" id="btn-pause-cancel">취소</button>
+  </div>
+</div>
+</div>
+
+<!-- 일시정지 배너 -->
+<div class="pause-banner" id="pause-banner">⏸ 전체 시간 정지 중 — 경과 시간이 멈춰 있습니다</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -550,11 +611,23 @@ let completedList  = []; // [{mechanicIdx, car, work, eta, doneTime, docId}]
 let editTarget = null;   // {type:'active'|'completed', docId}
 let manualAvgMin = null; // 수동 설정 평균 작업시간(분), null이면 자동계산
 let deviceUser = localStorage.getItem('bh_device_user') || ''; // 이 기기 사용자
+let pauseState = {active:false, startedAt:0, accumMs:0}; // 전체 시간 멈춤 상태(기기 공유)
 
 /* ════ 날짜 키 ════ */
 function todayKey(){
   const d = new Date();
   return `${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+function dateToKey(d){
+  return `${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
+}
+function dayKeyOffset(n){  // n일 전(+) 또는 후(-)의 키. dayKeyOffset(1)=어제
+  const d=new Date(); d.setDate(d.getDate()-n);
+  return dateToKey(d);
+}
+function tomorrowKey(){
+  const d=new Date(); d.setDate(d.getDate()+1);
+  return dateToKey(d);
 }
 
 /* ════ 시간 옵션 ════ */
@@ -585,6 +658,7 @@ function fillSelect(el, selected){
 const settingsRef = ()=> doc(db,'settings','mechanics');
 const vehiclesColl= ()=> `vehicles_${todayKey()}`;
 const logsColl    = ()=> `logs_${todayKey()}`;
+const pauseRef    = ()=> doc(db,'meta',`pause_${todayKey()}`);  // 당일 시간멈춤 상태
 
 /* ════ 이력 기록 ════ */
 async function addLog(action, mechanicName, car, detail){
@@ -625,7 +699,7 @@ function subscribeVehicles(){
     completedList=[];
     snap.forEach(d=>{
       const v={...d.data(), docId:d.id};
-      if(v.status==='active') activeVehicles[d.id]=v;
+      if(v.status==='active' || v.status==='diagnosis') activeVehicles[d.id]=v;
       else completedList.push(v);
     });
     completedList.sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
@@ -651,6 +725,64 @@ function subscribeSettings(){
 function updateSync(ok){
   const dot=document.getElementById('sync-dot');
   dot.style.background = ok ? 'var(--green)' : 'var(--red)';
+}
+
+/* ════ 시간 계산(전체) ════
+   - effClock(): 일시정지를 제외한 '효과적 현재 시각'. 정지 중엔 멈춤.
+   - 단계(phase)별 분리: 진단(dxMs) / 작업(workMs) 누적을 따로 보관.
+   - phaseStartEff: 현재 단계가 시작된 effClock 값(진행중인 단계 경과 계산용).
+   - 진단중→작업중 전환 시 진단시간을 dxMs에 확정하고 작업 타이머를 0부터 시작.
+*/
+function effClock(){
+  const base = pauseState.active ? (pauseState.startedAt||Date.now()) : Date.now();
+  return base - (pauseState.accumMs||0);
+}
+function phaseStartOf(v){
+  return (typeof v.phaseStartEff==='number') ? v.phaseStartEff
+       : (typeof v.createdEff==='number')   ? v.createdEff
+       : (v.createdAt || effClock());
+}
+function vehDxMs(v){   // 진단 누적(정지 제외). 진단중이면 진행분 합산.
+  let ms = (typeof v.dxMs==='number') ? v.dxMs : 0;
+  if(v.status==='diagnosis') ms += Math.max(0, effClock() - phaseStartOf(v));
+  return ms;
+}
+function vehWorkMs(v){  // 작업 누적(정지 제외). 작업중이면 진행분 합산.
+  let ms = (typeof v.workMs==='number') ? v.workMs : 0;
+  if(v.status==='active') ms += Math.max(0, effClock() - phaseStartOf(v));
+  // 구버전 호환: 단계정보 없는 완료건은 workMs(=과거 총소요)만 존재
+  if(ms===0 && v.status==='done' && typeof v.workMs!=='number' && v.completedAt && v.createdAt){
+    return Math.max(0, v.completedAt - v.createdAt);
+  }
+  return ms;
+}
+function vehTotalMs(v){ return vehDxMs(v) + vehWorkMs(v); }
+function fmtDur0(ms){ return fmtDuration(ms) || '0분'; }  // 0도 '0분'으로 표기
+function subscribePause(){
+  return onSnapshot(pauseRef(), snap=>{
+    if(snap.exists()){
+      const d=snap.data();
+      pauseState={active:!!d.active, startedAt:d.startedAt||0, accumMs:d.accumMs||0};
+    } else {
+      pauseState={active:false, startedAt:0, accumMs:0};
+    }
+    updatePauseUI();
+    render();
+  }, err=>{ /* 조용히 무시 */ });
+}
+function updatePauseUI(){
+  const btn=document.getElementById('btn-pause');
+  const banner=document.getElementById('pause-banner');
+  if(!btn) return;
+  if(pauseState.active){
+    btn.textContent='▶ 시간 재개';
+    btn.classList.add('btn-pause-on');
+    if(banner) banner.classList.add('show');
+  } else {
+    btn.textContent='⏸ 시간 멈춤';
+    btn.classList.remove('btn-pause-on');
+    if(banner) banner.classList.remove('show');
+  }
 }
 
 /* ════ 렌더 ════ */
@@ -682,7 +814,10 @@ function render(){
     else if(m.status==='accident'){badgeClass+='badge-accident';badgeText='사고수리';}
     else if(myActives.some(v=>(v.work||'').includes('휴무'))){badgeClass+='badge-active';badgeText='휴무';}
     else if(myActives.some(v=>(v.work||'').includes('하루'))){badgeClass+='badge-active';badgeText='하루';}
-    else if(myActives.length){badgeClass+='badge-active';badgeText='진행 '+myActives.length;}
+    else if(myActives.length){
+      if(myActives.every(v=>v.status==='diagnosis')){badgeClass+='badge-dx';badgeText='진단중';}
+      else{badgeClass+='badge-active';badgeText='진행 '+myActives.length;}
+    }
     else{badgeClass+='badge-wait';}
 
     const myDoneJobs = myDone.filter(c=>!isHoliday(c.work)).length;
@@ -699,17 +834,29 @@ function render(){
     if(m.status!=='holiday'){
       innerHtml+=`<div class="card-body">`;
       if(myActives.length){
-        innerHtml+=`<div class="active-stack${myActives.length>=3?' scroll-limit':''}">`;
+        innerHtml+=`<div class="active-stack${myActives.length>=2?' scroll-limit':''}">`;
         myActives.forEach(av=>{
           const isOff = (av.work||'').includes('휴무') || (av.work||'').includes('하루');
-          const elapsed = (!isOff && av.createdAt) ? fmtDuration(Date.now()-av.createdAt) : '';
+          const isDx  = av.status==='diagnosis';
+          const dxMs   = vehDxMs(av);
+          const workMs = vehWorkMs(av);
+          let timeHtml='';
+          if(!isOff){
+            if(isDx){
+              timeHtml = `<div class="active-elapsed">진단 ${fmtDur0(dxMs)} 경과</div>`;
+            } else {
+              timeHtml = `<div class="active-elapsed">작업 ${fmtDur0(workMs)} 경과</div>`;
+              if(dxMs>0) timeHtml += `<div class="active-subtime">└ 진단 ${fmtDuration(dxMs)}</div>`;
+            }
+          }
+          const rowCls = 'active-row'+(myActives.length>2?' compact':'')+(isDx?' diagnosis':'');
           innerHtml+=`
-            <div class="active-row${myActives.length>1?' compact':''}" data-act="edit" data-type="active" data-id="${av.docId}">
+            <div class="${rowCls}" data-act="edit" data-type="active" data-id="${av.docId}">
               <div class="pulse"></div>
               <div class="active-left">
-                <div class="active-car">${esc(av.car)}</div>
+                <div class="active-car">${esc(av.car)}${isDx?'<span class="row-tag dx">진단중</span>':''}</div>
                 <div class="active-work">${esc(av.work)}</div>
-                ${elapsed?`<div class="active-elapsed">작업 ${elapsed} 경과</div>`:''}
+                ${timeHtml}
               </div>
               <div class="active-right">
                 <div class="eta-label">완료 예정</div>
@@ -737,7 +884,15 @@ function render(){
             <div class="comp-list">
               ${myDone.map(c=>{
                 const isOff = (c.work||'').includes('휴무') || (c.work||'').includes('하루');
-                const took = (!isOff && c.completedAt && c.createdAt) ? fmtDuration(c.completedAt-c.createdAt) : '';
+                const cw = vehWorkMs(c), cd = vehDxMs(c);
+                let tookHtml='';
+                if(!isOff){
+                  if(cw>0){
+                    tookHtml = `<div class="comp-took">정비 ${fmtDuration(cw)}${cd>0?` <span style="color:var(--cyan)">·진단 ${fmtDuration(cd)}</span>`:''}</div>`;
+                  } else if(cd>0){
+                    tookHtml = `<div class="comp-took" style="color:var(--cyan)">진단 ${fmtDuration(cd)}</div>`;
+                  }
+                }
                 return `
                 <div class="comp-item" data-act="edit" data-type="completed" data-id="${c.docId}">
                   <div>
@@ -746,7 +901,7 @@ function render(){
                   </div>
                   <div class="comp-right">
                     <div class="comp-time">${c.doneTime||''} 완료</div>
-                    ${took?`<div class="comp-took">소요 ${took}</div>`:''}
+                    ${tookHtml}
                   </div>
                 </div>
               `;}).join('')}
@@ -777,15 +932,29 @@ function render(){
     const durations = completedList
       .filter(c=>{
         const off=(c.work||'').includes('휴무')||(c.work||'').includes('하루');
-        return !off && c.completedAt && c.createdAt && (c.completedAt-c.createdAt)>0;
+        return !off && vehWorkMs(c)>0;   // 작업시간(진단 제외) 기준. 진단만 한 건은 workMs=0 → 자동 제외
       })
-      .map(c=>c.completedAt-c.createdAt);
+      .map(c=>vehWorkMs(c));
     if(durations.length>0){
       const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
       document.getElementById('s-avg').textContent = fmtDuration(avg);
     } else {
       document.getElementById('s-avg').textContent = '-';
     }
+  }
+
+  // ── 평균 진단시간: 진단이 들어간(진단시간>0) 완료 건만 ──
+  const dxEl=document.getElementById('s-dxavg');
+  if(dxEl){
+    const dxDur = completedList
+      .filter(c=>{
+        const off=(c.work||'').includes('휴무')||(c.work||'').includes('하루');
+        return !off && vehDxMs(c)>0;
+      })
+      .map(c=>vehDxMs(c));
+    dxEl.textContent = dxDur.length>0
+      ? fmtDuration(dxDur.reduce((a,b)=>a+b,0)/dxDur.length)
+      : '-';
   }
 }
 
@@ -827,6 +996,7 @@ function openAdd(idx){
   document.getElementById('a-car').value='';
   document.getElementById('a-work').value='';
   fillSelect(document.getElementById('a-eta'),null);
+  document.getElementById('a-status').value='active';
   document.getElementById('add-modal-title').textContent='🚗 차량 입고 — '+mechanics[idx].name+' 기사';
   openModal('add-overlay');
   setTimeout(()=>document.getElementById('a-car').focus(),120);
@@ -838,18 +1008,25 @@ async function submitAdd(){
   const car=document.getElementById('a-car').value.trim();
   const work=document.getElementById('a-work').value.trim();
   const eta=document.getElementById('a-eta').value;
+  const status=document.getElementById('a-status').value;
   if(!car){alert('차량번호를 입력해주세요');return;}
   if(!work){alert('작업 내용을 입력해주세요');return;}
   const curActive = Object.values(activeVehicles).filter(v=>v.mechanicIdx===idx).length;
-  if(curActive>=4){ alert('한 기사당 진행중 차량은 최대 4대까지 등록할 수 있습니다.'); return; }
+  if(curActive>=4){ alert('한 기사당 진행중·진단중 차량은 합쳐서 최대 4대까지 등록할 수 있습니다.'); return; }
   try{
     const newDoc=doc(collection(db,vehiclesColl()));
     await setDoc(newDoc,{
       mechanicIdx:idx, car, work, eta,
-      status:'active', createdAt:Date.now()
+      status, createdAt:Date.now(),
+      createdEff: effClock(),          // 정지 제외 기준 입고시각
+      phaseStartEff: effClock(),       // 현재 단계(진단/작업) 시작 시각
+      dxMs: 0, workMs: 0,              // 진단/작업 누적(분리)
+      wasActive: (status==='active'),  // 한 번이라도 작업중을 거쳤는지
+      originDay: todayKey(),   // 최초 등록일 (이월 3일 제한 기준)
+      carryDays: 0             // 이월된 일수 (0=당일)
     });
     closeModal('add-overlay');
-    showToast(`${car} 입고 등록 완료`,'success');
+    showToast(`${car} ${status==='diagnosis'?'진단 등록':'입고 등록'} 완료`,'success');
     addLog('등록', mechanics[idx]?.name, car, work);
   }catch(e){showToast('저장 실패: '+e.message,'error');}
 };
@@ -861,11 +1038,11 @@ function openEdit(type,docId){
   const v = type==='active' ? activeVehicles[docId] : completedList.find(c=>c.docId===docId);
   if(!v)return;
   document.getElementById('edit-key').value=docId;
-  document.getElementById('edit-modal-title').textContent='✏️ '+mechanics[v.mechanicIdx].name+' — '+(type==='active'?'진행중':'완료')+' 차량';
+  document.getElementById('edit-modal-title').textContent='✏️ '+mechanics[v.mechanicIdx].name+' — '+(v.status==='diagnosis'?'진단중':(type==='active'?'진행중':'완료'))+' 차량';
   document.getElementById('e-car').value=v.car;
   document.getElementById('e-work').value=v.work;
   fillSelect(document.getElementById('e-eta'),v.eta);
-  document.getElementById('e-status').value=type==='active'?'active':'done';
+  document.getElementById('e-status').value = v.status || (type==='active'?'active':'done');
   openModal('edit-overlay');
 };
 
@@ -885,14 +1062,40 @@ async function submitEdit(){
     const orig = editTarget.type==='active'
       ? activeVehicles[docId]
       : completedList.find(c=>c.docId===docId);
+
+    /* ── 단계(phase)별 시간 확정 처리 ──
+       상태가 바뀌면 '떠나는 단계'의 경과를 해당 누적(dxMs/workMs)에 더하고,
+       새 단계 시작 시각(phaseStartEff)을 현재로 리셋한다. */
+    const oldStatus = orig.status;
+    const pStart = (typeof orig.phaseStartEff==='number') ? orig.phaseStartEff
+                 : (typeof orig.createdEff==='number')   ? orig.createdEff
+                 : (orig.createdAt || effClock());
+    const curPhaseMs = Math.max(0, effClock() - pStart);
+    let dxMs   = (typeof orig.dxMs==='number')   ? orig.dxMs   : 0;
+    let workMs = (typeof orig.workMs==='number') ? orig.workMs : 0;
+    let phaseStartEff = pStart;
+    if(oldStatus !== status){
+      if(oldStatus==='diagnosis')   dxMs   += curPhaseMs;   // 진단 시간 확정
+      else if(oldStatus==='active') workMs += curPhaseMs;   // 작업 시간 확정
+      phaseStartEff = effClock();                            // 새 단계 시작
+    }
+
     const payload={
-      mechanicIdx:orig.mechanicIdx,
+      ...orig,                          // 기존 필드 전부 보존(originDay, carryDays 등)
       car, work, eta, status,
-      createdAt:orig.createdAt||Date.now()
+      createdAt: orig.createdAt||Date.now(),
+      createdEff: (typeof orig.createdEff==='number') ? orig.createdEff : (orig.createdAt||effClock()),
+      phaseStartEff, dxMs, workMs,
+      wasActive: (orig.wasActive===true) || (status==='active') || (oldStatus==='active')
     };
+    delete payload.docId;               // 로컬 전용 필드는 저장하지 않음
     if(status==='done'){
       payload.doneTime    = orig.doneTime    || doneTime;
       payload.completedAt = orig.completedAt || Date.now();
+    } else {
+      // 완료 → 진행/진단 으로 되돌리면 완료시각 제거(시간 누적값은 유지)
+      delete payload.doneTime;
+      delete payload.completedAt;
     }
     await setDoc(ref,payload);
     closeModal('edit-overlay');
@@ -944,19 +1147,82 @@ async function saveSettings(){
   }catch(e){showToast('저장 실패: '+e.message,'error');}
 };
 
-/* ════ 초기화 ════ */
-async function doReset(){
+/* ════ 하루 마감 (암호 없음) — '하루' 작업 다음날 이월(최대 3일) ════ */
+async function doCloseDay(){
   try{
-    const coll=collection(db,vehiclesColl());
-    const snap=await getDocs(coll);
-    const dels=snap.docs.map(d=>deleteDoc(doc(db,vehiclesColl(),d.id)));
-    await Promise.all(dels);
+    const tmrColl = `vehicles_${tomorrowKey()}`;
+    const snap = await getDocs(collection(db, vehiclesColl()));
+    let carried=0;
+    for(const d of snap.docs){
+      const v = d.data();
+      const isDay = (v.work||'').includes('하루');
+      if(v.status==='active' && isDay){
+        const curCarry = (typeof v.carryDays==='number') ? v.carryDays : 0;
+        if(curCarry < 2){   // 0=당일,1=2일째,2=3일째 → 2면 더 이월 안 함
+          const nDoc = doc(collection(db, tmrColl));
+          await setDoc(nDoc, {
+            mechanicIdx: v.mechanicIdx,
+            car: v.car, work: v.work, eta: v.eta,
+            status: 'active',
+            createdAt: v.createdAt || Date.now(),
+            originDay: v.originDay || todayKey(),
+            carryDays: curCarry + 1
+          });
+          carried++;
+        }
+      }
+    }
+    closeModal('reset-overlay');
+    showToast(carried>0 ? `하루 마감 완료 · '하루' 작업 ${carried}건 내일로 이월` : '하루 마감 완료','success');
+  }catch(e){ showToast('마감 실패: '+e.message,'error'); }
+}
+
+/* ════ 전체 초기화 (암호 1007) ════ */
+const RESET_PW = '1007';
+async function doFullReset(){
+  const pw=document.getElementById('reset-pw').value.trim();
+  if(pw!==RESET_PW){ alert('초기화 암호가 올바르지 않습니다'); return; }
+  try{
+    const snap=await getDocs(collection(db,vehiclesColl()));
+    await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,vehiclesColl(),d.id))));
     const lsnap=await getDocs(collection(db,logsColl()));
     await Promise.all(lsnap.docs.map(d=>deleteDoc(doc(db,logsColl(),d.id))));
+    await setDoc(pauseRef(), {active:false, startedAt:0, accumMs:0});  // 일시정지 상태도 초기화
     closeModal('reset-overlay');
-    showToast('오늘 데이터 초기화 완료','success');
+    showToast('전체 초기화 완료','success');
   }catch(e){showToast('초기화 실패: '+e.message,'error');}
-};
+}
+
+/* ════ 전체 시간 멈춤 토글 (암호 1007) ════ */
+const PAUSE_PW = '1007';
+function openPauseModal(){
+  const resuming = pauseState.active;
+  document.getElementById('pause-modal-title').textContent = resuming ? '▶ 전체 시간 재개' : '⏸ 전체 시간 멈춤';
+  document.getElementById('pause-modal-desc').innerHTML = resuming
+    ? '멈춰 있던 경과 시간을 다시 진행시킵니다.<br>정지되어 있던 동안은 작업시간에서 제외됩니다.'
+    : '진행중·진단중 모든 차량의 경과 시간이 멈춥니다.<br>재개하면 멈춘 시점부터 이어서 계산됩니다.';
+  document.getElementById('btn-pause-confirm').textContent = resuming ? '재개' : '멈춤';
+  document.getElementById('pause-pw').value='';
+  openModal('pause-overlay');
+  setTimeout(()=>document.getElementById('pause-pw').focus(),120);
+}
+async function confirmPauseToggle(){
+  const pw=document.getElementById('pause-pw').value.trim();
+  if(pw!==PAUSE_PW){ alert('암호가 올바르지 않습니다'); return; }
+  try{
+    const now=Date.now();
+    let next;
+    if(pauseState.active){
+      const added = Math.max(0, now - (pauseState.startedAt||now)); // 이번 정지 구간
+      next = { active:false, startedAt:0, accumMs:(pauseState.accumMs||0)+added };
+    } else {
+      next = { active:true, startedAt:now, accumMs:(pauseState.accumMs||0) };
+    }
+    await setDoc(pauseRef(), next);
+    closeModal('pause-overlay');
+    showToast(next.active?'전체 시간 멈춤':'전체 시간 재개','success');
+  }catch(e){ showToast('처리 실패: '+e.message,'error'); }
+}
 
 /* ════ 차량 삭제 (암호 0070) ════ */
 const DELETE_PW = '0070';
@@ -1062,65 +1328,115 @@ async function openHistory(){
 
 
 /* ════ 엑셀 마감 (기사별 작업 내역 다운로드) ════ */
-function minutesOf(c){
-  if(c.completedAt && c.createdAt && (c.completedAt-c.createdAt)>0)
-    return Math.round((c.completedAt-c.createdAt)/60000);
-  return null;
+function minutesOf(c){    // 작업시간(분), 정지 제외
+  const ms = vehWorkMs(c);
+  return ms>0 ? Math.round(ms/60000) : null;
+}
+function dxMinutesOf(c){  // 진단시간(분), 정지 제외
+  const ms = vehDxMs(c);
+  return ms>0 ? Math.round(ms/60000) : null;
 }
 function isOffWork(w){ w=w||''; return w.includes('휴무')||w.includes('하루'); }
 function isHoliday(w){ w=w||''; return w.includes('휴무'); }
+function isDxOnly(c){ return !isOffWork(c.work) && vehWorkMs(c)<=0 && vehDxMs(c)>0; } // 진단만 하고 완료
 
-function exportExcel(){
-  if(typeof window.XLSX==='undefined'){ showToast('엑셀 모듈 로딩 중 — 잠시 후 다시 시도','error'); return; }
-  if(completedList.length===0){ showToast('완료된 차량이 없습니다','error'); return; }
+/* XLSX 라이브러리 확보 (cdnjs 차단 대비 다중 CDN 우회) */
+let _xlsxLoading=null;
+function ensureXLSX(){
+  if(typeof window.XLSX!=='undefined') return Promise.resolve(true);
+  if(_xlsxLoading) return _xlsxLoading;
+  const urls=[
+    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
+    'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
+  ];
+  _xlsxLoading=new Promise(resolve=>{
+    let i=0;
+    const tryNext=()=>{
+      if(typeof window.XLSX!=='undefined'){ resolve(true); return; }
+      if(i>=urls.length){ resolve(false); return; }
+      const sc=document.createElement('script');
+      sc.src=urls[i++];
+      sc.onload=()=>resolve(true);
+      sc.onerror=tryNext;
+      document.head.appendChild(sc);
+    };
+    tryNext();
+  });
+  return _xlsxLoading;
+}
 
+async function exportExcel(){
+  const ok = await ensureXLSX();
+  if(!ok || typeof window.XLSX==='undefined'){
+    alert('엑셀 모듈(XLSX)을 불러오지 못했습니다.\n\n· 인터넷 연결을 확인해주세요.\n· 공업소 네트워크가 외부 라이브러리(CDN)를 차단하고 있을 수 있습니다.');
+    return;
+  }
+  if(completedList.length===0){
+    alert('완료된 차량이 없습니다.\n\n엑셀 마감 파일에는 "완료" 상태로 처리된 차량만 들어갑니다.\n진행중·진단중 차량을 완료 처리한 뒤 다시 눌러주세요.');
+    return;
+  }
+ try{
   const d=new Date();
   const dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-  /* ── 시트1: 차량별 상세 ── */
-  const detailRows=[['기사','차량번호','작업내용','입고시각','완료시각','소요시간(분)','구분']];
+  /* ── 시트1: 차량별 상세 (진단/작업/총 시간 분리) ── */
+  const detailRows=[['기사','차량번호','작업내용','입고시각','완료시각','진단시간(분)','작업시간(분)','총시간(분)','구분']];
   mechanics.forEach((m,i)=>{
     completedList.filter(c=>c.mechanicIdx===i).forEach(c=>{
       const inT = c.createdAt ? new Date(c.createdAt) : null;
       const inStr = inT ? `${String(inT.getHours()).padStart(2,'0')}:${String(inT.getMinutes()).padStart(2,'0')}` : '';
-      const mins = minutesOf(c);
       const off = isOffWork(c.work);
+      const dxMin = off ? null : dxMinutesOf(c);
+      const wkMin = off ? null : minutesOf(c);
+      const totMin = (dxMin||0)+(wkMin||0);
+      let gubun = '정비';
+      if(off) gubun='휴무/하루';
+      else if((wkMin||0)===0 && (dxMin||0)>0) gubun='진단만';
+      else if((dxMin||0)>0) gubun='진단+정비';
       detailRows.push([
         m.name, c.car||'', c.work||'',
         inStr, c.doneTime||'',
-        off ? '' : (mins!=null?mins:''),
-        off ? '휴무/하루' : '정비'
+        off ? '' : (dxMin!=null?dxMin:''),
+        off ? '' : (wkMin!=null?wkMin:''),
+        off ? '' : (totMin||''),
+        gubun
       ]);
     });
   });
 
   /* ── 시트2: 기사별 요약 ── */
-  const sumRows=[['기사','정비 완료 대수','총 작업시간(분)','평균 작업시간(분)','휴무/하루 건수']];
-  let grandCount=0, grandMin=0, grandJobs=0;
+  const sumRows=[['기사','정비 완료 대수','총 작업시간(분)','평균 작업시간(분)','총 진단시간(분)','휴무/하루 건수']];
+  let grandCount=0, grandMin=0, grandJobs=0, grandDx=0;
   mechanics.forEach((m,i)=>{
     const mine=completedList.filter(c=>c.mechanicIdx===i);
-    const jobs=mine.filter(c=>!isOffWork(c.work));
+    const repairs=mine.filter(c=>!isOffWork(c.work) && vehWorkMs(c)>0);  // 작업시간 있는 정비건
     const offs=mine.filter(c=>isOffWork(c.work));
-    const minsArr=jobs.map(minutesOf).filter(x=>x!=null);
-    const totalMin=minsArr.reduce((a,b)=>a+b,0);
-    const avgMin=minsArr.length?Math.round(totalMin/minsArr.length):'';
-    sumRows.push([m.name, jobs.length, totalMin||'', avgMin, offs.length]);
-    grandCount+=jobs.length; grandMin+=totalMin; grandJobs+=minsArr.length;
+    const wkArr=repairs.map(minutesOf).filter(x=>x!=null);
+    const totalMin=wkArr.reduce((a,b)=>a+b,0);
+    const avgMin=wkArr.length?Math.round(totalMin/wkArr.length):'';
+    const dxArr=mine.filter(c=>!isOffWork(c.work)).map(dxMinutesOf).filter(x=>x!=null);
+    const totalDx=dxArr.reduce((a,b)=>a+b,0);
+    sumRows.push([m.name, repairs.length, totalMin||'', avgMin, totalDx||'', offs.length]);
+    grandCount+=repairs.length; grandMin+=totalMin; grandJobs+=wkArr.length; grandDx+=totalDx;
   });
   const grandAvg=grandJobs?Math.round(grandMin/grandJobs):'';
-  sumRows.push(['── 합계 ──', grandCount, grandMin||'', grandAvg, '']);
+  sumRows.push(['── 합계 ──', grandCount, grandMin||'', grandAvg, grandDx||'', '']);
 
   /* ── 워크북 생성 ── */
   const wb=window.XLSX.utils.book_new();
   const ws1=window.XLSX.utils.aoa_to_sheet(sumRows);
-  ws1["!cols"]=[{wch:12},{wch:14},{wch:16},{wch:16},{wch:14}];
+  ws1["!cols"]=[{wch:12},{wch:14},{wch:16},{wch:16},{wch:16},{wch:14}];
   window.XLSX.utils.book_append_sheet(wb, ws1, '기사별 요약');
   const ws2=window.XLSX.utils.aoa_to_sheet(detailRows);
-  ws2['!cols']=[{wch:12},{wch:16},{wch:24},{wch:10},{wch:10},{wch:12},{wch:10}];
+  ws2['!cols']=[{wch:12},{wch:16},{wch:24},{wch:10},{wch:10},{wch:12},{wch:12},{wch:11},{wch:11}];
   window.XLSX.utils.book_append_sheet(wb, ws2, '차량별 상세');
 
   window.XLSX.writeFile(wb, `현대북수원서비스_정비마감_${dateStr}.xlsx`);
   showToast('엑셀 파일 다운로드 완료','success');
+ }catch(e){
+   alert('엑셀 생성 중 오류가 발생했습니다.\n'+(e&&e.message?e.message:e));
+ }
 }
 
 /* ════ UI 유틸 ════ */
@@ -1135,10 +1451,11 @@ function showToast(msg,type=''){
 }
 
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay'].forEach(id=>closeModal(id));
+  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay','pause-overlay'].forEach(id=>closeModal(id));
   if(e.key==='Enter'){
     if(document.getElementById('add-overlay').classList.contains('open')) submitAdd();
     else if(document.getElementById('edit-overlay').classList.contains('open')) submitEdit();
+    else if(document.getElementById('pause-overlay').classList.contains('open')) confirmPauseToggle();
   }
 });
 
@@ -1159,7 +1476,8 @@ function updateDate(){
 function bindButtons(){
   document.getElementById('btn-settings').onclick      = openSettings;
   document.getElementById('btn-export').onclick        = exportExcel;
-  document.getElementById('btn-reset-open').onclick    = ()=>openModal('reset-overlay');
+  document.getElementById('btn-reset-open').onclick    = ()=>{const p=document.getElementById('reset-pw');if(p)p.value='';openModal('reset-overlay');};
+  document.getElementById('btn-closeday-open').onclick  = ()=>{ if(confirm("'하루' 작업 차량을 내일로 이월하고 하루 마감을 진행할까요?")) doCloseDay(); };
   document.getElementById('btn-add-submit').onclick    = submitAdd;
   document.getElementById('btn-add-cancel').onclick    = ()=>closeModal('add-overlay');
   document.getElementById('btn-edit-submit').onclick   = submitEdit;
@@ -1169,13 +1487,16 @@ function bindButtons(){
   document.getElementById('btn-delete-cancel').onclick = ()=>closeModal('delete-overlay');
   document.getElementById('btn-settings-save').onclick = saveSettings;
   document.getElementById('btn-settings-cancel').onclick= ()=>closeModal('settings-overlay');
-  document.getElementById('btn-reset-confirm').onclick = doReset;
+  document.getElementById('btn-reset-confirm').onclick = doFullReset;
   document.getElementById('btn-reset-cancel').onclick  = ()=>closeModal('reset-overlay');
   document.getElementById('btn-user').onclick          = openUserModal;
   document.getElementById('user-select').onchange      = toggleMasterPw;
   document.getElementById('btn-user-save').onclick     = saveUser;
   document.getElementById('btn-user-cancel').onclick   = ()=>closeModal('user-overlay');
   document.getElementById('btn-history').onclick       = openHistory;
+  document.getElementById('btn-pause').onclick         = openPauseModal;
+  document.getElementById('btn-pause-confirm').onclick  = confirmPauseToggle;
+  document.getElementById('btn-pause-cancel').onclick   = ()=>closeModal('pause-overlay');
   document.getElementById('btn-history-close').onclick = ()=>closeModal('history-overlay');
 }
 
@@ -1190,12 +1511,14 @@ function bindButtons(){
     render();
     subscribeVehicles();
     subscribeSettings();
+    subscribePause();
+    updatePauseUI();
     document.getElementById('loading-screen').classList.add('hide');
     if(!deviceUser){
       setTimeout(openUserModal, 600);
     }
     setInterval(()=>{
-      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay']
+      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay','pause-overlay']
         .some(id=>document.getElementById(id).classList.contains('open'));
       if(!modalOpen) render();
     }, 30000);
