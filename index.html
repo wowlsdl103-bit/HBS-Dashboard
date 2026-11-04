@@ -3,1534 +3,891 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>현대북수원서비스 정비 현황</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<title>현대북수원서비스 접수 대기</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap');
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap');
   *{box-sizing:border-box;margin:0;padding:0}
   :root{
     --bg:#060d1f;--bg2:#0a1428;--bg3:#0d1a35;--bg4:#111f3e;
     --blue:#2979ff;--blue2:#1565c0;--green:#00e676;--green2:#00c853;
-    --yellow:#ffd600;--red:#ff1744;--gray:#546e7a;--cyan:#00e5ff;
+    --yellow:#ffd600;--red:#ff1744;--cyan:#00e5ff;--orange:#ff9100;--gold:#ffb300;
     --text:#e8eeff;--text2:#90a4c8;--text3:#3d5070;
     --border:#1a2a50;--border2:#243660;
-    --card-bg:rgba(13,26,53,0.95);
-    --font:'Noto Sans KR',sans-serif;
-    --mono:'JetBrains Mono',monospace;
+    --font:'Noto Sans KR',sans-serif;--mono:'JetBrains Mono',monospace;
   }
-  html,body{width:100%;height:100vh;background:var(--bg);color:var(--text);font-family:var(--font);overflow:hidden}
-  body{display:flex;flex-direction:column}
+  html,body{width:100%;background:var(--bg);color:var(--text);font-family:var(--font)}
+  body{min-height:100vh;-webkit-font-smoothing:antialiased}
+  button,input,select,textarea{font-family:inherit;color:inherit;font-size:inherit}
+  button{cursor:pointer}
+  :focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
 
-  /* ─── HEADER ─── */
-  .header{
-    background:linear-gradient(180deg,#0a1428 0%,#060d1f 100%);
-    border-bottom:2px solid var(--border2);
-    padding:16px 28px;display:flex;align-items:center;justify-content:space-between;
-    flex-shrink:0;z-index:200;
-    box-shadow:0 2px 20px rgba(0,0,0,.6);
-  }
-  .header-left{}
-  .header-title{font-size:28px;font-weight:900;color:#fff;letter-spacing:-0.5px;line-height:1.2}
-  .header-title .accent{color:var(--blue)}
-  .header-date{font-size:15px;color:var(--text2);margin-top:4px;font-family:var(--mono)}
-  .header-center{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:center}
-  .stat-pill{display:flex;flex-direction:column;align-items:center;background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:7px 14px;min-width:70px}
-  .stat-pill .num{font-size:26px;font-weight:900;font-family:var(--mono);line-height:1}
-  .stat-pill .lbl{font-size:11px;color:var(--text3);margin-top:4px;white-space:nowrap}
-  .stat-pill.active .num{color:var(--green)}
-  .stat-pill.done .num{color:var(--blue)}
-  .stat-pill.total .num{color:var(--yellow)}
-  .stat-pill.off .num{color:#ff6b6b}
-  .stat-pill.day .num{color:var(--yellow)}
-  .stat-pill.off .num,.stat-pill.day .num{font-size:22px}
-  .stat-pill.avg{min-width:92px}
-  .stat-pill.avg .num{color:#b388ff;font-size:22px}
-  .stat-pill.dxavg{min-width:92px}
-  .stat-pill.dxavg .num{color:var(--cyan);font-size:22px}
-  .header-right{display:flex;gap:8px;align-items:center}
-  .clock{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--yellow);background:var(--bg3);border:1px solid var(--border2);border-radius:10px;padding:8px 16px;letter-spacing:2px}
-  .sync-dot{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;display:inline-block;margin-right:4px}
-  @keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px var(--green)}50%{opacity:.3;box-shadow:none}}
-  .btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:9px 15px;font-size:14px;cursor:pointer;transition:all .18s;font-family:var(--font);font-weight:500}
+  /* ══ 공통 헤더 ══ */
+  .hd{background:linear-gradient(180deg,#0a1428,#060d1f);border-bottom:2px solid var(--border2);
+    padding:12px 20px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;position:sticky;top:0;z-index:100}
+  .hd h1{font-size:19px;font-weight:900;letter-spacing:-.4px}
+  .hd h1 i{font-style:normal;color:var(--cyan)}
+  .sp{margin-left:auto}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--green);display:inline-block;animation:bl 2s infinite}
+  @keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+  .clock{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--yellow)}
+  .tabs{display:flex;gap:4px;flex-wrap:wrap}
+  .tab{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 13px;font-size:13px;color:var(--text2);font-weight:500}
+  .tab.on{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+  .btn{background:var(--bg3);color:var(--text2);border:1px solid var(--border2);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:500;transition:.15s}
   .btn:hover{background:var(--bg4);color:var(--text);border-color:var(--blue)}
-  .btn-danger{border-color:rgba(255,23,68,.4);color:#ff6b6b}
-  .btn-danger:hover{background:rgba(255,23,68,.15);border-color:var(--red);color:var(--red)}
-  .btn-success{border-color:rgba(0,230,118,.4);color:var(--green)}
-  .btn-success:hover{background:rgba(0,230,118,.15);border-color:var(--green2);color:var(--green2)}
-  .btn-primary{background:var(--blue);color:#fff;border-color:var(--blue)}
-  .btn-primary:hover{background:var(--blue2);border-color:var(--blue2)}
-  /* 시간 멈춤 버튼/배너 */
-  .btn-pause-on{background:rgba(255,23,68,.18) !important;border-color:var(--red) !important;color:#ff8a8a !important;animation:blink 1.4s infinite}
-  .pause-banner{
-    display:none;position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
-    background:rgba(60,8,18,.96);border:1px solid var(--red);border-radius:10px;
-    padding:9px 20px;font-size:14px;font-weight:700;color:#ff8a8a;z-index:2500;
-    box-shadow:0 8px 28px rgba(0,0,0,.6);letter-spacing:.3px;
+  .btn-p{background:var(--blue);border-color:var(--blue);color:#fff;font-weight:700}
+  .btn-p:hover{background:var(--blue2)}
+  .btn-g{border-color:rgba(0,230,118,.45);color:var(--green)}
+  .btn-r{border-color:rgba(255,23,68,.45);color:#ff6b6b}
+  .wrap{padding:16px 20px 70px;max-width:1500px;margin:0 auto}
+
+  /* ══ ① 대기실 TV ══ */
+  .tv{display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .tv-hd{display:flex;align-items:center;gap:18px;padding:14px 26px;background:var(--bg2);border-bottom:2px solid var(--border2);flex:none}
+  .tv-hd h1{font-size:27px;font-weight:900;letter-spacing:-.6px}
+  .tv-hd h1 i{font-style:normal;color:var(--cyan)}
+  .tv-tot{display:flex;gap:10px}
+  .tvpill{background:var(--bg3);border:1px solid var(--border2);border-radius:11px;padding:7px 17px;text-align:center;min-width:76px}
+  .tvpill b{display:block;font-family:var(--mono);font-size:28px;font-weight:900;line-height:1.05;color:var(--green)}
+  .tvpill span{font-size:11px;color:var(--text3)}
+  .tvpill.r b{color:var(--cyan)}
+  .tv-now{margin-left:auto;text-align:right;flex:none}
+  .tv-now .t{font-family:var(--mono);font-size:36px;font-weight:800;color:var(--yellow);line-height:1}
+  .tv-now .d{font-size:13px;color:var(--text2);margin-top:3px}
+
+  .tv-body{flex:1;display:flex;gap:16px;padding:16px 26px;min-height:0}
+  .tv-main{flex:1;display:flex;flex-direction:column;gap:14px;min-width:0}
+
+  /* 히어로 — 다음 2대 */
+  .heroes{display:grid;grid-template-columns:1fr 1fr;gap:14px;flex:none}
+  .hero{background:var(--bg3);border:1px solid var(--border2);border-radius:18px;padding:18px 24px;position:relative;overflow:hidden}
+  .hero.h1{background:linear-gradient(135deg,rgba(0,230,118,.16),rgba(0,230,118,.05));border:2px solid var(--green);
+    box-shadow:0 0 36px rgba(0,230,118,.15)}
+  .hero .lbl{font-size:13px;letter-spacing:3px;color:var(--text3);font-weight:700}
+  .hero.h1 .lbl{color:var(--green)}
+  .hero .car{font-family:var(--mono);font-size:clamp(38px,4.4vw,62px);font-weight:800;letter-spacing:2px;line-height:1.1;margin-top:6px}
+  .hero.h1 .car{color:var(--green)}
+  .hero .sub{font-size:16px;color:var(--text2);margin-top:5px}
+  .hero .tag{position:absolute;top:16px;right:20px}
+
+  /* 대기 그리드 */
+  .qgrid{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));
+    grid-auto-rows:min-content;gap:11px;align-content:start;overflow:hidden}
+  .qc{background:var(--bg3);border:1px solid var(--border);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:13px}
+  .qc .n{width:40px;height:40px;flex:none;border-radius:11px;background:var(--bg4);border:1px solid var(--border2);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:19px;font-weight:800;color:var(--text2)}
+  .qc .car{font-family:var(--mono);font-size:27px;font-weight:800;letter-spacing:1px;line-height:1.1}
+  .qc .sub{font-size:12px;color:var(--text3);margin-top:1px}
+  .qc.k-resv{border-left:4px solid var(--cyan)}
+  .qc.k-walk{border-left:4px solid var(--text3)}
+  .qc.k-express{border-left:4px solid var(--gold)}
+  .qmore{grid-column:1/-1;text-align:center;color:var(--text3);font-size:16px;padding:6px}
+
+  /* 우측 — 예약 차량 LIST */
+  .tv-side{width:264px;flex:none;background:var(--bg2);border:1px solid var(--border);border-radius:16px;
+    padding:15px;display:flex;flex-direction:column;min-height:0}
+  .tv-side h3{font-size:12.5px;letter-spacing:1.6px;color:var(--text3);margin-bottom:11px;flex:none}
+  .sl{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:7px}
+  .si{display:flex;align-items:center;gap:11px;background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:9px 12px}
+  .si em{font-style:normal;font-family:var(--mono);font-size:17px;font-weight:800;color:var(--cyan);flex:none}
+  .si b{font-family:var(--mono);font-size:18px;font-weight:700;letter-spacing:.5px}
+  .si.soon{border-color:rgba(0,229,255,.5);background:rgba(0,229,255,.07)}
+  .tv-empty{flex:1;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:25px}
+
+  /* 안내 — 고객님들께 드리는 말씀 */
+  .nwrap{flex:none;padding:0 26px 16px}
+  .nhead{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .nhead span{font-size:15px;font-weight:700;color:var(--text2);letter-spacing:.5px;flex:none}
+  .nhead::after{content:'';flex:1;height:1px;background:var(--border2)}
+  .notice{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .nt{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+  .nt .i{width:26px;height:26px;flex:none;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    font-family:var(--mono);font-weight:800;font-size:13.5px;margin-top:1px}
+  .nt b{display:block;font-size:15px;margin-bottom:4px;line-height:1.35;word-break:keep-all}
+  .nt p{font-size:12.5px;color:var(--text3);line-height:1.65;word-break:keep-all}
+  .nt.a .i{background:rgba(0,229,255,.15);color:var(--cyan);border:1px solid rgba(0,229,255,.45)}
+  .nt.a b{color:var(--cyan)}
+  .nt.b .i{background:rgba(255,214,0,.13);color:var(--yellow);border:1px solid rgba(255,214,0,.4)}
+  .nt.b b{color:var(--yellow)}
+  .nt.c .i{background:rgba(255,145,0,.13);color:var(--orange);border:1px solid rgba(255,145,0,.42)}
+  .nt.c b{color:var(--orange)}
+
+  .tag{display:inline-block;font-size:13px;font-weight:700;padding:5px 13px;border-radius:20px;white-space:nowrap}
+  .tag.resv{background:rgba(0,229,255,.14);color:var(--cyan);border:1px solid rgba(0,229,255,.5)}
+  .tag.walk{background:var(--bg4);color:var(--text3);border:1px solid var(--border2)}
+  .tag.express{background:rgba(255,179,0,.15);color:var(--gold);border:1px solid rgba(255,179,0,.55)}
+  .tag.late{background:rgba(255,145,0,.16);color:var(--orange);border:1px solid rgba(255,145,0,.5)}
+
+  .dnav{position:fixed;right:12px;bottom:10px;z-index:400;display:flex;gap:5px;opacity:.3;transition:opacity .2s}
+  .dnav:hover,.dnav:focus-within{opacity:1}
+  .dnav button{background:transparent;border:1px solid var(--border);border-radius:7px;
+    padding:5px 9px;font-size:10.5px;color:var(--text3);font-weight:400}
+  .dnav button:hover{border-color:var(--border2);color:var(--text2)}
+
+  /* ══ ② 고객 휴대폰 (공개) ══ */
+  .pub{max-width:520px;margin:0 auto;padding:0 0 60px}
+  .pub-hd{background:linear-gradient(180deg,#0a1428,#060d1f);padding:18px 18px 16px;border-bottom:1px solid var(--border2);
+    position:sticky;top:0;z-index:50}
+  .pub-hd h1{font-size:17px;font-weight:900}
+  .pub-hd h1 i{font-style:normal;color:var(--cyan)}
+  .pub-hd .u{font-size:12px;color:var(--text3);margin-top:3px;font-family:var(--mono)}
+  .pub-find{margin:14px 16px;background:var(--bg3);border:1px solid var(--border2);border-radius:13px;padding:14px}
+  .pub-find label{display:block;font-size:12.5px;color:var(--text2);margin-bottom:8px}
+  .pub-find .row{display:flex;gap:8px}
+  .pub-find input{flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:9px;padding:13px 14px;
+    font-family:var(--mono);font-size:19px;font-weight:700;letter-spacing:2px;text-align:center;outline:none}
+  .pub-find input:focus{border-color:var(--cyan)}
+  .pub-find button{flex:none;padding:0 20px;border-radius:9px;background:var(--cyan);border:0;color:#042;font-weight:800;font-size:14px}
+  .mybox{margin:14px 16px;border-radius:16px;padding:20px;text-align:center;
+    background:linear-gradient(135deg,rgba(0,230,118,.16),rgba(0,230,118,.05));border:2px solid var(--green)}
+  .mybox .c{font-family:var(--mono);font-size:30px;font-weight:800;letter-spacing:1.5px;color:var(--green)}
+  .mybox .big{font-size:17px;color:var(--text2);margin-top:10px}
+  .mybox .big b{font-family:var(--mono);font-size:46px;font-weight:900;color:#fff;display:block;line-height:1.15;margin:2px 0}
+  .mybox.none{background:var(--bg3);border:1px dashed var(--border2)}
+  .mybox.none .c{color:var(--text2);font-size:20px}
+  .mybox .x{margin-top:12px;background:none;border:1px solid var(--border2);border-radius:8px;padding:7px 14px;font-size:12px;color:var(--text3)}
+  .pub-sec{margin:20px 16px 10px;font-size:12.5px;letter-spacing:1.4px;color:var(--text3);display:flex;align-items:center;gap:9px}
+  .pub-sec::after{content:'';flex:1;height:1px;background:var(--border)}
+  .pr{display:flex;align-items:center;gap:13px;background:var(--bg3);border:1px solid var(--border);border-radius:12px;
+    padding:13px 15px;margin:0 16px 8px}
+  .pr.me{border:2px solid var(--green);background:rgba(0,230,118,.09)}
+  .pr .n{width:34px;height:34px;flex:none;border-radius:9px;background:var(--bg4);border:1px solid var(--border2);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:16px;font-weight:800;color:var(--text2)}
+  .pr.me .n{background:var(--green);border-color:var(--green);color:#042}
+  .pr .car{font-family:var(--mono);font-size:21px;font-weight:800;letter-spacing:1px}
+  .pr .t{margin-left:auto;font-size:11.5px;color:var(--text3);font-family:var(--mono);flex:none}
+  .pub-note{margin:14px 16px 22px;padding:12px 15px;background:var(--bg2);border:1px solid var(--border);border-radius:11px;
+    font-size:12px;color:var(--text3);line-height:1.7}
+  .pub .nwrap{padding:18px 16px 0}
+  .pub .notice{grid-template-columns:1fr;gap:9px}
+  .pub-empty{margin:40px 16px;text-align:center;color:var(--text3);font-size:16px}
+
+  /* ══ ③ 접수·예약 ══ */
+  .bar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:15px}
+  .daysel{background:var(--bg3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;font-family:var(--mono);font-size:14px}
+  .panel{background:var(--bg2);border:1px solid var(--border);border-radius:14px;padding:17px;margin-bottom:15px}
+  .panel h2{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:12px}
+  .panel h2 span{font-weight:400;color:var(--text3);font-size:12.5px}
+  .qf{display:grid;grid-template-columns:104px 108px 1.1fr 0.9fr 1.3fr auto;gap:8px;align-items:center}
+  .qf input,.qf select{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 11px;font-size:14px;outline:none;width:100%}
+  .qf input:focus,.qf select:focus{border-color:var(--blue)}
+  .hint{font-size:11.5px;color:var(--text3);margin-top:8px;line-height:1.7}
+  .warnbox{margin-top:10px;padding:10px 13px;background:rgba(255,179,0,.09);border-left:3px solid var(--gold);
+    border-radius:7px;font-size:12.5px;color:#e8c470;line-height:1.65}
+  textarea.bulk{width:100%;min-height:150px;background:var(--bg);border:1px solid var(--border2);border-radius:10px;
+    padding:12px;font-family:var(--mono);font-size:13px;line-height:1.8;outline:none;resize:vertical}
+  textarea.bulk:focus{border-color:var(--blue)}
+
+  table.lst{width:100%;border-collapse:collapse;font-size:13.5px}
+  table.lst th{text-align:left;font-size:11.5px;color:var(--text3);font-weight:500;padding:8px 9px;border-bottom:1px solid var(--border2)}
+  table.lst td{padding:9px;border-bottom:1px solid rgba(255,255,255,.045);vertical-align:middle}
+  table.lst tr.taken{opacity:.42}
+  table.lst tr:hover{background:rgba(255,255,255,.03)}
+  .pl{font-family:var(--mono);font-size:15px;font-weight:700}
+  .st{font-size:11px;font-weight:700;padding:3px 9px;border-radius:11px;white-space:nowrap;display:inline-block}
+  .st-resv{background:rgba(0,229,255,.14);color:var(--cyan);border:1px solid rgba(0,229,255,.45)}
+  .st-walk{background:var(--bg4);color:var(--text3);border:1px solid var(--border2)}
+  .st-express{background:rgba(255,179,0,.15);color:var(--gold);border:1px solid rgba(255,179,0,.5)}
+  .st-scheduled{background:rgba(157,107,255,.15);color:#cbb0ff;border:1px solid rgba(157,107,255,.45)}
+  .st-waiting{background:rgba(0,230,118,.13);color:var(--green);border:1px solid rgba(0,230,118,.45)}
+  .st-taken{background:var(--bg4);color:var(--text3);border:1px solid var(--border2)}
+  .mini{background:var(--bg3);border:1px solid var(--border2);border-radius:7px;padding:5px 10px;font-size:12px;color:var(--text2)}
+  .mini:hover{border-color:var(--blue);color:var(--text)}
+  .mini.g{border-color:rgba(0,230,118,.4);color:var(--green)}
+
+  /* ══ ④ 기사용 ══ */
+  .mwrap{max-width:560px;margin:0 auto;padding:14px 14px 90px}
+  .me{background:var(--bg3);border:1px solid var(--border2);border-radius:12px;padding:12px 14px;margin-bottom:12px;display:flex;align-items:center;gap:10px;font-size:14px}
+  .me b{color:var(--green)}
+  .mcard{background:var(--bg3);border:1px solid var(--border);border-radius:14px;padding:15px;margin-bottom:11px}
+  .mcard.next{border:2px solid var(--green);background:rgba(0,230,118,.07)}
+  .mtop{display:flex;align-items:center;gap:12px}
+  .mnum{width:42px;height:42px;flex:none;border-radius:50%;background:var(--bg4);border:1px solid var(--border2);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:19px;font-weight:900;color:var(--text2)}
+  .mcard.next .mnum{background:var(--green);border-color:var(--green);color:#042}
+  .mcar{font-family:var(--mono);font-size:25px;font-weight:900;letter-spacing:1px;line-height:1.1}
+  .mname{font-size:13.5px;color:var(--text2);margin-top:2px}
+  .mwork{font-size:13px;color:var(--text2);margin-top:9px;padding-top:9px;border-top:1px dashed var(--border2)}
+  .mtake{width:100%;margin-top:12px;padding:15px;border-radius:11px;background:var(--blue);border:1px solid var(--blue);color:#fff;font-size:16px;font-weight:700}
+  .mtake:active{background:var(--blue2)}
+  .mundo{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:300;background:var(--bg3);
+    border:1px solid var(--green);border-radius:30px;padding:11px 20px;font-size:14px;display:none;align-items:center;gap:12px;box-shadow:0 10px 30px rgba(0,0,0,.6)}
+  .mundo.show{display:flex}
+  .mundo button{background:none;border:0;color:var(--green);font-weight:700}
+
+  /* ══ 모달 ══ */
+  .ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:900;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(3px)}
+  .ov.open{display:flex}
+  .md{background:#0d1835;border:1px solid var(--border2);border-radius:14px;padding:24px;width:520px;max-width:96vw;max-height:92vh;overflow-y:auto}
+  .md h3{font-size:16px;font-weight:700;margin-bottom:16px}
+  .fr{margin-bottom:12px}
+  .fl{display:block;font-size:12px;color:var(--text2);margin-bottom:5px}
+  .fi{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;outline:none}
+  .fi:focus{border-color:var(--blue)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .mbtns{display:flex;gap:8px;margin-top:16px}
+  .mbtns .btn{flex:1;padding:11px}
+  .sw{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid var(--border2);font-size:13.5px}
+  .sw:last-of-type{border-bottom:0}
+  .sw small{display:block;color:var(--text3);font-size:11.5px;margin-top:2px}
+  .sw input[type=checkbox]{width:20px;height:20px;accent-color:var(--blue);flex:none}
+  .sw input[type=number]{width:88px;text-align:right;flex:none}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(90px);background:var(--bg3);
+    border:1px solid var(--border2);border-radius:9px;padding:12px 20px;font-size:13.5px;z-index:999;opacity:0;transition:.28s;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  .toast.ok{border-color:rgba(0,230,118,.5);color:var(--green)}
+  .toast.err{border-color:rgba(255,23,68,.5);color:#ff6b6b}
+  .load{position:fixed;inset:0;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:9999;transition:opacity .4s}
+  .load.hide{opacity:0;pointer-events:none}
+  .ring{width:44px;height:44px;border:3px solid var(--border2);border-top-color:var(--cyan);border-radius:50%;animation:sp 1s linear infinite;margin-bottom:14px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  @media(max-width:1100px){.tv-side{display:none}.heroes{grid-template-columns:1fr}}
+  @media(max-width:900px){
+    .qf{grid-template-columns:1fr 1fr;gap:7px}
+    .tv{height:auto;overflow:visible}
+    .tv-hd{padding:12px 14px;gap:10px}.tv-hd h1{font-size:18px}.tv-now .t{font-size:24px}
+    .tv-body{padding:12px;flex-direction:column}
+    .hero .car{font-size:38px}
+    .qgrid{grid-template-columns:1fr 1fr}
+    .nwrap{padding:0 12px 14px}
+    .notice{grid-template-columns:1fr;gap:9px}
+    .wrap{padding:12px 12px 70px}
+    table.lst{font-size:12px}table.lst td,table.lst th{padding:7px 4px}
   }
-  .pause-banner.show{display:block;animation:blink 1.6s infinite}
-
-  /* ─── GRID ─── */
-  .grid-wrap{flex:1;padding:14px;background:var(--bg);overflow:hidden;min-height:0}
-  .grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(3,1fr);gap:12px;height:100%}
-
-  /* ─── MECHANIC CARD ─── */
-  .mechanic-card{
-    background:var(--card-bg);border:1px solid var(--border);border-radius:14px;
-    display:flex;flex-direction:column;overflow:hidden;min-height:0;
-    transition:border-color .2s;
-  }
-  .mechanic-card.has-active{border-color:rgba(0,230,118,.35)}
-  .mechanic-card.holiday{border:2px solid rgba(255,23,68,.7) !important;background:rgba(30,5,10,.95)}
-  .mechanic-card.halfday{border:2px solid rgba(255,214,0,.6) !important}
-
-  /* ── 작업내용 '휴무' → 카드 전체 빨강 ── */
-  .mechanic-card.work-holiday{border:2px solid var(--red) !important;background:rgba(60,8,18,.95) !important}
-  .mechanic-card.work-holiday .card-header{background:rgba(255,23,68,.18)}
-  .mechanic-card.work-holiday .mech-name{color:#ff8a8a}
-  .mechanic-card.work-holiday .mech-count{color:#c77}
-  .mechanic-card.work-holiday .active-row{background:rgba(255,23,68,.15) !important;border-color:rgba(255,23,68,.5) !important}
-  .mechanic-card.work-holiday .active-row .pulse{background:var(--red)}
-  .mechanic-card.work-holiday .active-car{color:#ff8a8a}
-  .mechanic-card.work-holiday .active-work{color:#e08a8a}
-  .mechanic-card.work-holiday .eta-time{color:#ff8a8a}
-  .mechanic-card.work-holiday .badge-active{background:rgba(255,23,68,.18);color:#ff8a8a;border-color:rgba(255,23,68,.5)}
-
-  /* ── 작업내용 '하루' → 카드 전체 노랑 ── */
-  .mechanic-card.work-halfday{border:2px solid var(--yellow) !important;background:rgba(50,42,4,.95) !important}
-  .mechanic-card.work-halfday .card-header{background:rgba(255,214,0,.15)}
-  .mechanic-card.work-halfday .mech-name{color:#ffe066}
-  .mechanic-card.work-halfday .mech-count{color:#cc9}
-  .mechanic-card.work-halfday .active-row{background:rgba(255,214,0,.13) !important;border-color:rgba(255,214,0,.45) !important}
-  .mechanic-card.work-halfday .active-row .pulse{background:var(--yellow)}
-  .mechanic-card.work-halfday .active-car{color:#ffe066}
-  .mechanic-card.work-halfday .active-work{color:#ddc066}
-  .mechanic-card.work-halfday .eta-time{color:#ffe066}
-  .mechanic-card.work-halfday .badge-active{background:rgba(255,214,0,.15);color:#ffe066;border-color:rgba(255,214,0,.45)}
-
-  /* ── 기사 상태 '사고수리' → 카드 보라색 (차량 등록 가능) ── */
-  .mechanic-card.accident{border:2px solid #9d6bff !important;background:rgba(40,20,70,.95) !important}
-  .mechanic-card.accident .card-header{background:rgba(157,107,255,.18)}
-  .mechanic-card.accident .mech-name{color:#cbb0ff}
-  .mechanic-card.accident .mech-count{color:#a98fd6}
-  .mechanic-card.accident .active-row{background:rgba(157,107,255,.13) !important;border-color:rgba(157,107,255,.5) !important}
-  .mechanic-card.accident .active-row .pulse{background:#b388ff}
-  .mechanic-card.accident .active-car{color:#cbb0ff}
-  .mechanic-card.accident .active-work{color:#b49ee0}
-  .mechanic-card.accident .eta-time{color:#ffd600}
-  .mechanic-card.accident .badge-active{background:rgba(157,107,255,.18);color:#cbb0ff;border-color:rgba(157,107,255,.5)}
-  .badge-accident{background:rgba(157,107,255,.18);color:#cbb0ff;border:1px solid rgba(157,107,255,.55)}
-
-  /* ── 차량 상태 '진단중' → 해당 차량 행만 시안(아쿠아)색 ── */
-  .active-row.diagnosis{background:rgba(0,229,255,.08);border-color:rgba(0,229,255,.42)}
-  .active-row.diagnosis:hover{background:rgba(0,229,255,.15);border-color:rgba(0,229,255,.6)}
-  .active-row.diagnosis .pulse{background:var(--cyan)}
-  .active-row.diagnosis .active-car{color:var(--cyan)}
-  .active-row.diagnosis .active-work{color:#7fe4ff}
-  .active-row.diagnosis .active-elapsed{color:#8ec9dd}
-  .active-row.diagnosis .eta-time{color:var(--cyan)}
-  .row-tag{display:inline-block;font-size:11px;font-weight:700;padding:1px 7px;border-radius:10px;vertical-align:middle;margin-left:7px;letter-spacing:.2px;line-height:1.5}
-  .row-tag.dx{background:rgba(0,229,255,.16);color:var(--cyan);border:1px solid rgba(0,229,255,.5)}
-  .badge-dx{background:rgba(0,229,255,.14);color:var(--cyan);border:1px solid rgba(0,229,255,.5)}
-
-  .card-header{
-    display:flex;align-items:center;justify-content:space-between;
-    padding:14px 18px;background:rgba(0,0,0,.25);border-bottom:1px solid var(--border);flex-shrink:0;
-  }
-  .card-header-left{}
-  .mech-name{font-size:26px;font-weight:900;color:#fff;letter-spacing:-0.5px;line-height:1.1}
-  .mech-count{font-size:13px;color:var(--text2);margin-top:3px}
-  .badge{font-size:14px;font-weight:700;padding:5px 14px;border-radius:20px;letter-spacing:.3px}
-  .badge-wait{background:var(--bg4);color:var(--text3);border:1px solid var(--border)}
-  .badge-active{background:rgba(0,230,118,.12);color:var(--green);border:1px solid rgba(0,230,118,.4)}
-  .badge-holiday{background:rgba(255,23,68,.15);color:#ff6b6b;border:1px solid rgba(255,23,68,.5)}
-  .badge-halfday{background:rgba(255,214,0,.12);color:var(--yellow);border:1px solid rgba(255,214,0,.4)}
-
-  /* Active vehicle row */
-  .active-stack{display:flex;flex-direction:column;gap:8px;flex-shrink:0}
-  .active-stack.scroll-limit{max-height:74%;overflow-y:auto}
-  .active-stack::-webkit-scrollbar{width:4px}
-  .active-stack::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-  .active-row{
-    margin:12px 14px 0;padding:14px 16px;
-    background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.35);
-    border-radius:10px;cursor:pointer;transition:background .18s;
-    display:flex;align-items:center;justify-content:space-between;gap:10px;
-  }
-  .active-stack .active-row{margin:0 14px}
-  .active-stack .active-row:first-child{margin-top:12px}
-  .active-row:hover{background:rgba(0,230,118,.14);border-color:rgba(0,230,118,.55)}
-  .active-row .pulse{width:9px;height:9px;border-radius:50%;background:var(--green);animation:blink 2s infinite;flex-shrink:0}
-  .active-left{flex:1;min-width:0}
-  .active-car{font-size:24px;font-weight:900;color:var(--green);font-family:var(--mono);letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.15}
-  .active-work{font-size:15px;color:#6fd99a;margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .active-elapsed{font-size:13px;color:var(--text2);margin-top:5px;font-family:var(--mono)}
-  .active-subtime{font-size:12px;color:var(--cyan);margin-top:2px;font-family:var(--mono);opacity:.92}
-  .active-elapsed i{font-size:14px;vertical-align:-1px}
-  .active-right{text-align:right;flex-shrink:0}
-  .eta-label{font-size:12px;color:var(--text3)}
-  .eta-time{font-size:26px;font-weight:900;color:var(--yellow);font-family:var(--mono);line-height:1.1}
-
-  /* 3대 이상일 때 컴팩트하게 — 4대까지 한눈에 (1~2대는 풀사이즈) */
-  .active-row.compact{padding:11px 14px}
-  .active-row.compact .active-car{font-size:21px}
-  .active-row.compact .active-work{font-size:13px;margin-top:2px}
-  .active-row.compact .active-elapsed{font-size:12px;margin-top:2px}
-  .active-row.compact .active-subtime{font-size:11px;margin-top:1px}
-  .active-row.compact .eta-time{font-size:22px}
-  .active-row.compact .eta-label{font-size:11px}
-
-  .no-vehicle{padding:24px 12px;text-align:center;color:var(--text3);font-size:16px}
-
-  /* 카드 본문: 차량박스 고정, 완료/입고는 남는 공간에서 스크롤 */
-  .card-body{flex:1;display:flex;flex-direction:column;min-height:0;overflow:hidden}
-  .card-scroll{flex:1;overflow-y:auto;min-height:0}
-  .card-scroll::-webkit-scrollbar{width:4px}
-  .card-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-
-  /* Completed section */
-  .comp-section{margin:10px 14px 0;border-top:1px solid var(--border);padding-top:10px}
-  .comp-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
-  .comp-title{font-size:13px;color:var(--text2)}
-  .comp-title b{color:var(--blue)}
-  .comp-toggle{font-size:13px;color:var(--blue);cursor:pointer;background:none;border:none;font-family:var(--font);padding:0}
-  .comp-toggle:hover{color:#64b5f6}
-  .comp-list{display:none}
-  .comp-list.open{display:block}
-  .comp-item{
-    display:flex;align-items:center;justify-content:space-between;
-    border-bottom:1px solid rgba(255,255,255,.04);
-    cursor:pointer;transition:background .15s;border-radius:4px;padding:6px 4px;
-  }
-  .comp-item:hover{background:rgba(255,255,255,.04)}
-  .comp-item:last-child{border-bottom:none}
-  .comp-car{font-size:14px;color:var(--text);font-family:var(--mono);font-weight:500}
-  .comp-work{font-size:12px;color:var(--text3);margin-top:1px}
-  .comp-right{flex-shrink:0;margin-left:6px;text-align:right}
-  .comp-time{font-size:12px;color:var(--text3);font-family:var(--mono)}
-  .comp-took{font-size:12px;color:var(--green);font-family:var(--mono);font-weight:700;margin-top:1px}
-
-  /* Add button */
-  .add-row{
-    margin:10px 14px 14px;padding:11px;
-    background:transparent;border:1px dashed var(--border);border-radius:8px;
-    color:var(--text3);font-size:14px;cursor:pointer;transition:all .18s;
-    font-family:var(--font);width:calc(100% - 28px);text-align:center;flex-shrink:0;
-  }
-  .add-row:hover{background:var(--bg4);border-color:var(--blue);color:var(--blue)}
-
-  /* ─── MODALS ─── */
-  .overlay{
-    display:none;position:fixed;inset:0;
-    background:rgba(0,0,0,.8);z-index:1000;
-    align-items:center;justify-content:center;
-    backdrop-filter:blur(4px);
-  }
-  .overlay.open{display:flex}
-  .modal{
-    background:#0d1835;border:1px solid var(--border2);border-radius:14px;
-    padding:26px;width:420px;max-width:96vw;
-    box-shadow:0 20px 60px rgba(0,0,0,.8);
-  }
-  .modal h3{font-size:16px;font-weight:700;color:#fff;margin-bottom:20px}
-  .form-row{margin-bottom:14px}
-  .form-label{font-size:12px;color:var(--text2);margin-bottom:5px;display:block}
-  .form-input{
-    width:100%;background:var(--bg);border:1px solid var(--border2);
-    border-radius:7px;padding:10px 12px;color:var(--text);
-    font-size:14px;font-family:var(--font);outline:none;
-    transition:border .18s;
-  }
-  .form-input:focus{border-color:var(--blue)}
-  .form-input option{background:var(--bg2)}
-  .modal-btns{display:flex;gap:8px;margin-top:20px}
-  .modal-btns button{flex:1;padding:10px}
-  .modal.edit-m{border-color:rgba(255,214,0,.4)}
-  .modal.edit-m h3{color:var(--yellow)}
-  .modal.settings-m{width:480px;border-color:var(--border2)}
-  .names-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-height:60vh;overflow-y:auto;padding-right:4px}
-  .names-grid::-webkit-scrollbar{width:3px}
-  .names-grid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
-  .name-row{display:flex;flex-direction:column;gap:4px}
-  .name-row label{font-size:11px;color:var(--text3)}
-
-  /* ─── LOADING ─── */
-  .loading-screen{
-    position:fixed;inset:0;background:var(--bg);
-    display:flex;flex-direction:column;align-items:center;justify-content:center;
-    z-index:9999;transition:opacity .5s;
-  }
-  .loading-screen.hide{opacity:0;pointer-events:none}
-  .loader-ring{
-    width:48px;height:48px;border:3px solid var(--border2);
-    border-top-color:var(--blue);border-radius:50%;
-    animation:spin 1s linear infinite;margin-bottom:16px;
-  }
-  @keyframes spin{to{transform:rotate(360deg)}}
-  .loader-text{color:var(--text2);font-size:14px}
-
-  /* ─── TOAST ─── */
-  .toast{
-    position:fixed;bottom:24px;right:24px;
-    background:var(--bg3);border:1px solid var(--border2);border-radius:8px;
-    padding:12px 18px;font-size:13px;color:var(--text);
-    z-index:3000;transform:translateY(80px);opacity:0;
-    transition:all .3s;pointer-events:none;
-    box-shadow:0 8px 24px rgba(0,0,0,.5);
-  }
-  .toast.show{transform:translateY(0);opacity:1}
-  .toast.success{border-color:rgba(0,230,118,.5);color:var(--green)}
-  .toast.error{border-color:rgba(255,23,68,.5);color:#ff6b6b}
-
-  /* ─── BOTTOM BAR ─── */
-  .bottom-bar{
-    background:var(--bg2);border-top:1px solid var(--border);
-    padding:10px 24px;display:flex;gap:20px;align-items:center;flex-wrap:wrap;
-  }
-  .legend{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text3)}
-  .leg-dot{width:10px;height:10px;border-radius:3px;flex-shrink:0}
-
-  /* 큰 화면: 4×3 고정. 중간 화면 단계적 축소 */
-  @media(max-width:1400px){.grid{grid-template-columns:repeat(3,1fr);grid-template-rows:repeat(4,1fr)}}
-  @media(max-width:1050px){.grid{grid-template-columns:repeat(2,1fr);grid-template-rows:repeat(6,1fr)}}
-
-  /* ─── 폰/태블릿 세로 화면 (보기 전용) ─── */
-  @media(max-width:760px){
-    html,body{height:auto;overflow:auto}
-    body{display:block}
-    .header{flex-wrap:wrap;gap:10px;padding:12px 14px}
-    .header-title{font-size:20px}
-    .header-date{font-size:12px}
-    .header-center{order:3;width:100%;justify-content:space-between;gap:8px}
-    .stat-pill{flex:1;min-width:0;padding:6px 4px}
-    .stat-pill .num{font-size:20px}
-    .stat-pill .lbl{font-size:10px}
-    .stat-pill.avg{min-width:0}
-    .stat-pill.avg .num{font-size:16px}
-    .stat-pill.dxavg{min-width:0}
-    .stat-pill.dxavg .num{font-size:16px}
-    .clock{font-size:18px;padding:6px 10px}
-    .header-right{flex-wrap:wrap;gap:6px}
-    .btn{padding:8px 12px;font-size:13px}
-
-    .grid-wrap{height:auto;overflow:visible;padding:10px}
-    .grid{display:flex;flex-direction:column;height:auto;gap:10px}
-    .mechanic-card{min-height:auto}
-    .card-body{overflow:visible}
-    .card-scroll{overflow:visible}
-
-    .mech-name{font-size:22px}
-    .active-car{font-size:22px;white-space:normal}
-    .eta-time{font-size:24px}
-    .comp-list{display:block !important}
-    .comp-toggle{display:none}
-  }
+  @media(max-width:560px){.qgrid{grid-template-columns:1fr}}
+  @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
 <body>
 
-<!-- LOADING -->
-<div class="loading-screen" id="loading-screen">
-  <div class="loader-ring"></div>
-  <div class="loader-text">Firebase 연결 중...</div>
-</div>
+<div class="load" id="load"><div class="ring"></div><div style="color:var(--text2);font-size:14px">연결 중...</div></div>
+<div id="app"></div>
 
-<!-- HEADER -->
-<div class="header">
-  <div class="header-left">
-    <div class="header-title">현대북수원서비스 <span class="accent" id="header-date-span">정비 현황</span></div>
-    <div class="header-date" id="header-date-full"></div>
+<!-- 수정 -->
+<div class="ov" id="ov-edit"><div class="md">
+  <h3 id="ed-title">접수 수정</h3>
+  <div class="two">
+    <div class="fr"><label class="fl">차량번호</label><input class="fi mono" id="ed-car"></div>
+    <div class="fr"><label class="fl">고객명</label><input class="fi" id="ed-name"></div>
   </div>
-  <div class="header-center">
-    <div class="stat-pill active"><div class="num" id="s-active">0</div><div class="lbl">진행중</div></div>
-    <div class="stat-pill done"><div class="num" id="s-done">0</div><div class="lbl">완료</div></div>
-    <div class="stat-pill total"><div class="num" id="s-total">0</div><div class="lbl">총 입고</div></div>
-    <div class="stat-pill off"><div class="num" id="s-off">0</div><div class="lbl">휴무자</div></div>
-    <div class="stat-pill day"><div class="num" id="s-day">0</div><div class="lbl">하루 작업</div></div>
-    <div class="stat-pill dxavg"><div class="num" id="s-dxavg">-</div><div class="lbl">평균 진단시간</div></div>
-    <div class="stat-pill avg"><div class="num" id="s-avg">-</div><div class="lbl">평균 작업시간</div></div>
+  <div class="two">
+    <div class="fr"><label class="fl">구분</label><select class="fi" id="ed-kind">
+      <option value="walk">현장접수</option><option value="express">긴급</option><option value="resv">예약</option></select></div>
+    <div class="fr"><label class="fl">예약시각 (예약만)</label><input class="fi mono" id="ed-time" type="time"></div>
   </div>
-  <div class="header-right">
-    <span class="sync-dot" id="sync-dot"></span>
-    <div class="clock" id="clock">00:00:00</div>
-    <button class="btn" id="btn-user"><span id="device-user-label">사용자 미지정</span></button>
-    <button class="btn" id="btn-pause">⏸ 시간 멈춤</button>
-    <button class="btn" id="btn-history">📋 이력</button>
-    <button class="btn" id="btn-settings">⚙ 설정</button>
-    <button class="btn btn-primary" id="btn-export">📊 엑셀 마감</button>
-    <button class="btn btn-success" id="btn-closeday-open">🌙 하루 마감</button>
-    <button class="btn btn-danger" id="btn-reset-open">전체 초기화</button>
-  </div>
-</div>
+  <div class="fr"><label class="fl">작업 내용 <span style="color:var(--text3)">· 고객 화면에는 표시되지 않습니다</span></label><input class="fi" id="ed-work"></div>
+  <div class="fr"><label class="fl">상태</label><select class="fi" id="ed-status">
+    <option value="scheduled">예정 (미도착)</option><option value="waiting">대기중 (도착)</option><option value="taken">배정완료</option></select></div>
+  <div class="mbtns"><button class="btn btn-g" id="ed-save">저장</button><button class="btn" id="ed-cancel">취소</button></div>
+  <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border2)">
+    <button class="btn btn-r" id="ed-del" style="width:100%">삭제</button></div>
+</div></div>
 
-<!-- GRID -->
-<div class="grid-wrap">
-  <div class="grid" id="mechanic-grid"></div>
-</div>
+<!-- 일괄 등록 -->
+<div class="ov" id="ov-bulk"><div class="md" style="width:640px">
+  <h3>예약 일괄 등록</h3>
+  <p class="hint" style="margin:0 0 10px">엑셀에서 <b style="color:var(--yellow)">시간 / 차량번호 / 고객명 / 작업내용</b> 순으로 복사해 붙여넣으세요.<br>
+  한 줄에 하나씩, 탭·쉼표·공백 모두 인식합니다.</p>
+  <textarea class="bulk" id="bk-text" placeholder="09:00	12가3456	홍길동	엔진오일
+09:30	34나5678	김영희	정기점검
+10:00	56다9012	박철수"></textarea>
+  <div id="bk-prev" style="margin-top:12px;font-size:13px;color:var(--text2)"></div>
+  <div class="mbtns"><button class="btn btn-p" id="bk-go">등록</button><button class="btn" id="bk-cancel">취소</button></div>
+</div></div>
 
-<!-- BOTTOM -->
-<!-- ── ADD MODAL ── -->
-<div class="overlay" id="add-overlay">
-<div class="modal">
-  <h3 id="add-modal-title">🚗 차량 입고 등록</h3>
-  <input type="hidden" id="add-idx">
-  <div class="form-row">
-    <label class="form-label">차량번호</label>
-    <input class="form-input" id="a-car" placeholder="예) GN7-123가 1234  /  모델명-00가 0000" maxlength="20">
+<!-- 배정 내역 (암호) -->
+<div class="ov" id="ov-log"><div class="md" style="width:640px">
+  <h3 id="lg-title">배정 내역</h3>
+  <div id="lg-lock">
+    <p class="hint" style="margin:0 0 12px">어느 기사가 어떤 작업지시서를 가져갔는지 확인합니다. 이 화면은 접수·대기 화면 어디에도 표시되지 않습니다.</p>
+    <div class="fr"><label class="fl">관리자 암호</label><input class="fi" id="lg-pw" type="password" autocomplete="off"></div>
+    <div class="mbtns"><button class="btn btn-p" id="lg-open">확인</button><button class="btn" id="lg-cancel">취소</button></div>
   </div>
-  <div class="form-row">
-    <label class="form-label">작업 내용</label>
-    <input class="form-input" id="a-work" placeholder="예) 엔진오일 교환, 타이어 교체">
+  <div id="lg-body" style="display:none">
+    <div id="lg-sum" style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:14px"></div>
+    <div id="lg-list" style="max-height:52vh;overflow-y:auto"></div>
+    <div class="mbtns"><button class="btn" id="lg-close">닫기</button></div>
   </div>
-  <div class="form-row">
-    <label class="form-label">완료 예정 시간</label>
-    <select class="form-input" id="a-eta"></select>
-  </div>
-  <div class="form-row">
-    <label class="form-label">상태</label>
-    <select class="form-input" id="a-status">
-      <option value="active">진행중</option>
-      <option value="diagnosis">진단중</option>
-    </select>
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-success" id="btn-add-submit">입고 등록</button>
-    <button class="btn btn-danger" id="btn-add-cancel">취소</button>
-  </div>
-</div>
-</div>
+</div></div>
 
-<!-- ── EDIT MODAL ── -->
-<div class="overlay" id="edit-overlay">
-<div class="modal edit-m">
-  <h3 id="edit-modal-title">✏️ 차량 정보 수정</h3>
-  <input type="hidden" id="edit-key">
-  <div class="form-row">
-    <label class="form-label">차량번호</label>
-    <input class="form-input" id="e-car" placeholder="차량번호" maxlength="20">
-  </div>
-  <div class="form-row">
-    <label class="form-label">작업 내용</label>
-    <input class="form-input" id="e-work" placeholder="작업 내용">
-  </div>
-  <div class="form-row">
-    <label class="form-label">완료 예정 시간</label>
-    <select class="form-input" id="e-eta"></select>
-  </div>
-  <div class="form-row">
-    <label class="form-label">상태</label>
-    <select class="form-input" id="e-status">
-      <option value="diagnosis">진단중</option>
-      <option value="active">진행중</option>
-      <option value="done">완료</option>
-    </select>
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-success" id="btn-edit-submit">저장</button>
-    <button class="btn btn-danger" id="btn-edit-cancel">취소</button>
-  </div>
-  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border2);text-align:center">
-    <button class="btn" id="btn-edit-delete" style="border-color:rgba(255,23,68,.4);color:#ff6b6b;width:100%">🗑 이 차량 삭제</button>
-  </div>
-</div>
-</div>
+<!-- 설정 -->
+<div class="ov" id="ov-set"><div class="md">
+  <h3>설정</h3>
+  <div class="sw"><span>차량번호 가리기<small>12가3456 → 12가**56</small></span><input type="checkbox" id="st-mcar"></div>
+  <div class="sw"><span>대기실 TV에 고객명 표시<small>공개 링크에는 어떤 설정이든 이름이 전송되지 않습니다</small></span><input type="checkbox" id="st-tvname"></div>
+  <div class="sw"><span>대기실 TV 표시 대수</span><input class="fi mono" id="st-rows" type="number" min="4" max="24"></div>
+  <div class="sw"><span>예약 우선 유예 (분)<small>10:00 예약이면 09:30부터 우선, 10:30 넘겨 도착하면 도착순으로 강등</small></span><input class="fi mono" id="st-grace" type="number" min="0" max="120"></div>
+  <div class="sw"><span>긴급 1일 허용 건수<small>넘기면 등록할 때 경고가 뜹니다</small></span><input class="fi mono" id="st-excap" type="number" min="0" max="20"></div>
+  <div class="sw"><span>긴급을 예약보다 우선<small style="color:#e8c470">켜면 미리 예약한 고객이 뒤로 밀립니다. 권장하지 않습니다</small></span><input type="checkbox" id="st-exfirst"></div>
+  <div class="sw"><span>고객 화면에 긴급 표시<small style="color:#e8c470">켜면 누가 추가요금을 냈는지 다른 고객에게 보입니다</small></span><input type="checkbox" id="st-exbadge"></div>
+  <div class="fr" style="margin-top:14px"><label class="fl">관리자 암호</label><input class="fi" id="st-pw" type="password" autocomplete="off"></div>
+  <div class="mbtns"><button class="btn btn-g" id="st-save">저장</button><button class="btn" id="st-cancel">취소</button></div>
+</div></div>
 
-<!-- ── 삭제 확인 MODAL ── -->
-<div class="overlay" id="delete-overlay">
-<div class="modal">
-  <h3 style="color:#ff6b6b">🗑 차량 삭제 확인</h3>
-  <p style="color:#ff6b6b;font-size:14px;line-height:1.6;margin-bottom:14px">정말 이 차량 기록을 삭제하시겠습니까?<br><span style="color:var(--text2)">삭제된 데이터는 복구할 수 없습니다.</span></p>
-  <div id="delete-target-info" style="background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;margin-bottom:14px;font-size:14px;color:var(--text)"></div>
-  <div class="form-row">
-    <label class="form-label" style="color:#ff6b6b">삭제 암호</label>
-    <input class="form-input" id="delete-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-danger" id="btn-delete-confirm">삭제 실행</button>
-    <button class="btn" id="btn-delete-cancel">취소</button>
-  </div>
-</div>
-</div>
-
-<!-- ── SETTINGS MODAL ── -->
-<div class="overlay" id="settings-overlay">
-<div class="modal settings-m">
-  <h3>⚙️ 기사 / 평균시간 설정</h3>
-  <div class="names-grid" id="names-grid"></div>
-  <div style="margin-top:18px;padding-top:16px;border-top:1px solid var(--border2)">
-    <label class="form-label" style="margin-bottom:6px">평균 작업시간 수동 설정 (분)</label>
-    <input class="form-input" id="s-avg-input" type="number" min="0" placeholder="비워두면 자동 계산">
-    <div style="font-size:12px;color:var(--text3);margin-top:6px">숫자를 입력하면 상단 평균 작업시간에 그 값이 표시됩니다. 비우면 완료 차량 기준으로 자동 계산됩니다.</div>
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-success" id="btn-settings-save">저장</button>
-    <button class="btn btn-danger" id="btn-settings-cancel">취소</button>
-  </div>
-</div>
-</div>
-
-<!-- ── RESET MODAL ── -->
-<div class="overlay" id="reset-overlay">
-<div class="modal">
-  <h3>⚠️ 오늘 데이터 초기화</h3>
-  <p style="color:#ff6b6b;font-size:14px;line-height:1.6;margin-bottom:8px">오늘의 모든 차량 데이터가 삭제됩니다.<br>기사 이름 및 상태 설정은 유지됩니다.</p>
-  <div class="form-row">
-    <label class="form-label" style="color:#ff6b6b">초기화 암호</label>
-    <input class="form-input" id="reset-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-danger" id="btn-reset-confirm">초기화 실행</button>
-    <button class="btn" id="btn-reset-cancel">취소</button>
-  </div>
-</div>
-</div>
-
-<!-- ── 사용자 지정 MODAL ── -->
-<div class="overlay" id="user-overlay">
-<div class="modal">
-  <h3>👤 이 기기 사용자 지정</h3>
-  <p style="color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:14px">이 기기에서 등록·수정·완료하는 작업에 아래 사용자 이름이 기록됩니다. 한 번만 설정하면 됩니다.</p>
-  <div class="form-row">
-    <label class="form-label">사용자 선택</label>
-    <select class="form-input" id="user-select"></select>
-  </div>
-  <div class="form-row" id="master-pw-row" style="display:none">
-    <label class="form-label" style="color:#ff6b6b">마스터 암호</label>
-    <input class="form-input" id="user-master-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
-  </div>
-  <div class="form-row">
-    <label class="form-label">또는 직접 입력 (실명을 기입해주세요)</label>
-    <input class="form-input" id="user-custom" placeholder="예) 홍길동">
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-success" id="btn-user-save">저장</button>
-    <button class="btn btn-danger" id="btn-user-cancel">취소</button>
-  </div>
-</div>
-</div>
-
-<!-- ── 이력 MODAL ── -->
-<div class="overlay" id="history-overlay">
-<div class="modal" style="width:560px">
-  <h3>📋 오늘 작업 이력</h3>
-  <div id="history-list" style="max-height:60vh;overflow-y:auto"></div>
-  <div class="modal-btns">
-    <button class="btn" id="btn-history-close">닫기</button>
-  </div>
-</div>
-</div>
-
-<!-- ── 시간 멈춤 MODAL ── -->
-<div class="overlay" id="pause-overlay">
-<div class="modal">
-  <h3 id="pause-modal-title">⏸ 전체 시간 멈춤</h3>
-  <p id="pause-modal-desc" style="color:var(--text2);font-size:13px;line-height:1.6;margin-bottom:14px">진행중·진단중 모든 차량의 경과 시간이 멈춥니다.<br>재개하면 멈춘 시점부터 이어서 계산됩니다.</p>
-  <div class="form-row">
-    <label class="form-label">암호</label>
-    <input class="form-input" id="pause-pw" type="password" placeholder="암호를 입력하세요" autocomplete="off">
-  </div>
-  <div class="modal-btns">
-    <button class="btn btn-primary" id="btn-pause-confirm">확인</button>
-    <button class="btn btn-danger" id="btn-pause-cancel">취소</button>
-  </div>
-</div>
-</div>
-
-<!-- 일시정지 배너 -->
-<div class="pause-banner" id="pause-banner">⏸ 전체 시간 정지 중 — 경과 시간이 멈춰 있습니다</div>
-
-<!-- TOAST -->
 <div class="toast" id="toast"></div>
+<div class="mundo" id="mundo"><span id="mundo-t"></span><button id="mundo-b">되돌리기</button></div>
 
-<!-- ════════════════════════════════════════
-  ██████████████ FIREBASE CONFIG ██████████████
-  ─── 아래 YOUR_XXX 값들을 Firebase 콘솔에서 복사해서 붙여넣으세요 ───
-  ══════════════════════════════════════════ -->
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, query, where, getDocs, deleteDoc }
+import { getFirestore, doc, getDoc, setDoc, deleteDoc, onSnapshot, collection, query, where }
   from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-/* ┌─────────────────────────────────────────────────────────┐
-   │  🔥 여기에 본인 Firebase 설정값을 입력하세요              │
-   │  Firebase Console → 프로젝트 설정 → 내 앱 → SDK 설정    │
-   └─────────────────────────────────────────────────────────┘ */
+/* ════ 암호 — 여기만 고치면 됩니다 ════ */
+const PW = { ADMIN:'7007' };
+/* ═══════════════════════════════════ */
+
 const firebaseConfig = {
-  apiKey:            "AIzaSyAybAB6dQjlZGSnz__tKknNPSR9JlBNgyQ",
-  authDomain:        "bh-hbs.firebaseapp.com",
-  databaseURL:       "https://bh-hbs-default-rtdb.firebaseio.com",
-  projectId:         "bh-hbs",
-  storageBucket:     "bh-hbs.firebasestorage.app",
-  messagingSenderId: "117807762872",
-  appId:             "1:117807762872:web:f83aaba0246273ad7d134d",
-  measurementId:     "G-QR3RWNX5HK"
+  apiKey:"AIzaSyAybAB6dQjlZGSnz__tKknNPSR9JlBNgyQ",
+  authDomain:"bh-hbs.firebaseapp.com",
+  databaseURL:"https://bh-hbs-default-rtdb.firebaseio.com",
+  projectId:"bh-hbs",
+  storageBucket:"bh-hbs.firebasestorage.app",
+  messagingSenderId:"117807762872",
+  appId:"1:117807762872:web:f83aaba0246273ad7d134d",
+  measurementId:"G-QR3RWNX5HK"
 };
+let app,db;
+try{ app=initializeApp(firebaseConfig); db=getFirestore(app); }
+catch(e){ document.getElementById('load').innerHTML=`<div style="color:#ff6b6b">Firebase 초기화 실패<br>${e.message}</div>`; throw e; }
 
-/* ════════════ 설정값 검증 ════════════ */
-function showFatalError(title, lines){
-  const ls=document.getElementById('loading-screen');
-  ls.innerHTML=`
-    <div style="max-width:480px;text-align:left;padding:24px;background:#1a0a12;border:1px solid #ff1744;border-radius:12px">
-      <div style="color:#ff6b6b;font-size:17px;font-weight:700;margin-bottom:12px">⚠️ ${title}</div>
-      <div style="color:#e8eeff;font-size:13px;line-height:1.8">${lines.join('<br>')}</div>
-    </div>`;
-}
+const COLL='queue';
+const DEF={maskCar:true, tvName:true, rows:12, grace:30, exCap:3, exFirst:false, exBadge:false};
+const KIND={resv:'예약', walk:'현장접수', express:'긴급'};
 
-if(firebaseConfig.apiKey==="YOUR_API_KEY" || firebaseConfig.projectId==="YOUR_PROJECT_ID"){
-  showFatalError("Firebase 설정값이 입력되지 않았습니다", [
-    "이 HTML 파일을 메모장/VSCode로 열어서",
-    "<b style='color:#ffd600'>firebaseConfig</b> 부분의 <b style='color:#ffd600'>YOUR_API_KEY</b> 등",
-    "6개 값을 본인 Firebase 콘솔의 실제 값으로",
-    "교체한 뒤 저장하고 다시 열어주세요.",
-    "<br>📍 Firebase Console → 프로젝트 설정 → 내 앱 → SDK 설정"
-  ]);
-  throw new Error("Firebase config not set");
-}
+let CFG={...DEF}, rows=[], viewDay=null, mode='admin';
+let me=localStorage.getItem('bh_q_me')||'', myCar=localStorage.getItem('bh_q_mycar')||'';
+let lastTaken=null, undoTimer=null, addKind='resv';
 
-if(location.protocol==='file:'){
-  console.warn('file:// 로 열림 — Firebase 모듈 로딩이 차단될 수 있습니다.');
-}
+/* ════ 유틸 ════ */
+const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const hm=t=>`${String(new Date(t).getHours()).padStart(2,'0')}:${String(new Date(t).getMinutes()).padStart(2,'0')}`;
+const esc=s=>(s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const dayPlus=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d);};
+const at=(d,t)=>(!d||!t)?null:new Date(`${d}T${t}:00`).getTime();
+function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast '+t;void e.offsetWidth;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600);}
 
-/* ════════════ 초기화 ════════════ */
-let app, db;
-try{
-  app = initializeApp(firebaseConfig);
-  db  = getFirestore(app);
-}catch(e){
-  showFatalError("Firebase 초기화 실패", [
-    "설정값(firebaseConfig)이 올바른지 확인해주세요.",
-    "<br>오류 내용:",
-    "<span style='color:#90a4c8;font-size:12px'>"+e.message+"</span>"
-  ]);
-  throw e;
+function maskName(n){
+  n=(n||'').trim(); if(!n) return '-';
+  const a=[...n]; if(a.length<=1) return n;
+  if(a.length===2) return a[0]+'*';
+  return a[0]+'*'.repeat(a.length-2)+a[a.length-1];
 }
+function maskCar(c){
+  c=(c||'').trim(); if(!CFG.maskCar||!c) return c||'-';
+  return c.replace(/(\d{2})(\d{2})(?!.*\d)/,'**$2');
+}
+const digits=s=>(s||'').replace(/\D/g,'');
+const last4=s=>digits(s).slice(-4);
 
-const DEFAULT_NAMES = ['손홍철','이춘기','강준구','이성규','배병수','곽재훈','박주창','석병수','최태현','이진희','맹성환','전호원'];
-let mechanics    = [];   // [{name, status}]
-let activeVehicles = {}; // docId → {mechanicIdx, car, work, eta}
-let completedList  = []; // [{mechanicIdx, car, work, eta, doneTime, docId}]
-let editTarget = null;   // {type:'active'|'completed', docId}
-let manualAvgMin = null; // 수동 설정 평균 작업시간(분), null이면 자동계산
-let deviceUser = localStorage.getItem('bh_device_user') || ''; // 이 기기 사용자
-let pauseState = {active:false, startedAt:0, accumMs:0}; // 전체 시간 멈춤 상태(기기 공유)
+/* ════ 정렬: 예약 > 긴급 > 현장접수 (기본) ════ */
+function sortKey(r){
+  const g=(CFG.grace??30)*60000;
+  const T_RESV=0, T_EXP=CFG.exFirst?-1:1, T_WALK=2;
+  let tier,t;
+  if(r.kind==='resv' && r.resvAt){
+    const late=r.arrivedAt && r.arrivedAt>r.resvAt+g;
+    if(late){tier=T_WALK;t=r.arrivedAt;} else {tier=T_RESV;t=r.resvAt;}
+  } else if(r.kind==='express'){ tier=T_EXP; t=r.arrivedAt||r.createdAt||0; }
+  else { tier=T_WALK; t=r.arrivedAt||r.createdAt||0; }
+  return tier*1e13 + t;
+}
+const isLate=r=>r.kind==='resv'&&r.resvAt&&r.arrivedAt&&r.arrivedAt>r.resvAt+(CFG.grace??30)*60000;
+const waiting=()=>rows.filter(r=>r.status==='waiting').sort((a,b)=>sortKey(a)-sortKey(b));
+const scheduled=()=>rows.filter(r=>r.status==='scheduled').sort((a,b)=>(a.resvAt||0)-(b.resvAt||0));
 
-/* ════ 날짜 키 ════ */
-function todayKey(){
-  const d = new Date();
-  return `${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
-}
-function dateToKey(d){
-  return `${d.getFullYear()}_${d.getMonth()+1}_${d.getDate()}`;
-}
-function dayKeyOffset(n){  // n일 전(+) 또는 후(-)의 키. dayKeyOffset(1)=어제
-  const d=new Date(); d.setDate(d.getDate()-n);
-  return dateToKey(d);
-}
-function tomorrowKey(){
-  const d=new Date(); d.setDate(d.getDate()+1);
-  return dateToKey(d);
-}
+/* 고객 안내 3칸 — 대기실 TV와 고객 휴대폰에 공통으로 들어갑니다 */
+const NOTICE=`<div class="nwrap">
+  <div class="nhead"><span>고객님들께 드리는 말씀</span></div>
+  <div class="notice">
+    <div class="nt a"><div class="i">1</div><div>
+      <b>예약 차량들 우선으로 정비가 진행됩니다</b>
+      <p>1~2달 전부터 미리 예약을 주신 고객님들이 우선으로 진행되기 때문에, 이해해주시면 감사드리겠습니다.</p></div></div>
+    <div class="nt b"><div class="i">2</div><div>
+      <b>내용에 따라 정비 시간이 달라질 수 있습니다</b>
+      <p>점검 및 작업에 시간이 길어질 수 있사오니, 너그러이 양해해주시면 감사드리겠습니다.</p></div></div>
+    <div class="nt c"><div class="i">3</div><div>
+      <b>예약 시간은 접수 순서가 확정되는 시간입니다</b>
+      <p>예약하신 시간에 바로 작업이 진행되는 것이 아니라, 정비에 대기 시간이 발생할 수 있습니다. 엔지니어가 작업을 마치는 대로 진행되오니 잠시만 기다려주시면 감사드리겠습니다.</p></div></div>
+  </div>
+</div>`;
 
-/* ════ 시간 옵션 ════ */
-function timeOptions(){
-  const r=[];
-  for(let h=8;h<=18;h++){
-    for(let m=0;m<60;m+=15){
-      if(h===8&&m<30)continue;
-      if(h===18&&m>0)continue;
-      r.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`);
-    }
-  }
-  return r;
+/* 고객 화면용 배지 — 긴급은 기본적으로 감춥니다 */
+function pubTag(r){
+  if(r.kind==='express') return CFG.exBadge? '<span class="tag express">긴급</span>' : '<span class="tag walk">접수</span>';
+  if(r.kind==='resv') return `<span class="tag ${isLate(r)?'late':'resv'}">${hm(r.resvAt)} 예약</span>`;
+  return `<span class="tag walk">${r.arrivedAt?hm(r.arrivedAt)+' 접수':'접수'}</span>`;
 }
-function fillSelect(el, selected){
-  el.innerHTML='';
-  const opts=timeOptions();
-  opts.forEach(t=>{ const o=document.createElement('option');o.value=t;o.textContent=t;if(t===selected)o.selected=true;el.appendChild(o); });
-  if(!selected){
-    const n=new Date();let h=n.getHours(),m=Math.ceil(n.getMinutes()/15)*15;
-    if(m>=60){m=0;h++;}if(h<8){h=8;m=30;}if(h>18||(h===18&&m>0)){h=18;m=0;}
-    const def=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-    opts.forEach((t,i)=>{if(t===def)el.selectedIndex=i;});
-  }
+const pubKind=r=>(r.kind==='express'&&!CFG.exBadge)?'walk':r.kind;
+
+/* ════ Firestore ════ */
+const cfgRef=()=>doc(db,'settings','queue_cfg');
+let unsub=null;
+function subscribe(day){
+  if(unsub) unsub();
+  unsub=onSnapshot(query(collection(db,COLL),where('day','==',day)),s=>{
+    rows=[]; s.forEach(d=>rows.push({...d.data(),id:d.id}));
+    paint(); document.querySelectorAll('.dot').forEach(d=>d.style.background='var(--green)');
+    // 배정 내역 모달이 열려 있으면 그 안도 같이 갱신
+    if(document.getElementById('lg-body').style.display==='block') renderLog();
+  },()=>{ document.querySelectorAll('.dot').forEach(d=>d.style.background='var(--red)'); toast('실시간 연결 오류','err'); });
 }
+const put=(id,d)=>setDoc(doc(db,COLL,id),d);
+const addDoc_=d=>setDoc(doc(collection(db,COLL)),d);
 
-/* ════ Firestore 경로 ════ */
-const settingsRef = ()=> doc(db,'settings','mechanics');
-const vehiclesColl= ()=> `vehicles_${todayKey()}`;
-const logsColl    = ()=> `logs_${todayKey()}`;
-const pauseRef    = ()=> doc(db,'meta',`pause_${todayKey()}`);  // 당일 시간멈춤 상태
-
-/* ════ 이력 기록 ════ */
-async function addLog(action, mechanicName, car, detail){
-  try{
-    const ref=doc(collection(db, logsColl()));
-    const now=new Date();
-    const timeStr=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
-    await setDoc(ref,{
-      action,                       // '등록' / '수정' / '완료' / '삭제'
-      user: deviceUser||'(미지정)',  // 누가 (기기 사용자)
-      mechanic: mechanicName||'',    // 어느 기사 칸
-      car: car||'',                  // 차량번호
-      detail: detail||'',            // 부가 설명
-      time: timeStr,
-      ts: Date.now()
-    });
-  }catch(e){ /* 로그 실패는 조용히 무시 (본 작업 방해 안 함) */ }
+/* ════ 모드 ════ */
+function setMode(m){
+  mode=m;
+  const u=new URL(location); u.searchParams.set('v',m); history.replaceState(null,'',u);
+  if(m!=='public') localStorage.setItem('bh_q_mode',m);
+  window.scrollTo(0,0); paint();
 }
+const paint=()=>({tv:vTV,public:vPublic,admin:vAdmin,mob:vMob}[mode]||vAdmin)();
 
-/* ════ 로드 ════ */
-async function loadSettings(){
-  const snap = await getDoc(settingsRef());
-  if(snap.exists()){
-    const d=snap.data();
-    mechanics = d.mechanics || DEFAULT_NAMES.map(n=>({name:n,status:'working'}));
-    manualAvgMin = (d.manualAvgMin!==undefined) ? d.manualAvgMin : null;
-  } else {
-    mechanics = DEFAULT_NAMES.map(n=>({name:n,status:'working'}));
-    await setDoc(settingsRef(),{mechanics, manualAvgMin:null});
-  }
-}
+/* ════ ① 대기실 TV ════ */
+function vTV(){
+  const w=waiting(), lim=CFG.rows||12, now=new Date();
+  const hero=w.slice(0,2), grid=w.slice(2,lim);
+  const sc=scheduled().filter(r=>r.resvAt&&r.resvAt>=Date.now()-20*60000).slice(0,9);
+  const nResv=w.filter(r=>r.kind==='resv').length;
 
-/* ════ 실시간 구독 ════ */
-function subscribeVehicles(){
-  const coll = collection(db, vehiclesColl());
-  return onSnapshot(coll, snap=>{
-    activeVehicles={};
-    completedList=[];
-    snap.forEach(d=>{
-      const v={...d.data(), docId:d.id};
-      if(v.status==='active' || v.status==='diagnosis') activeVehicles[d.id]=v;
-      else completedList.push(v);
-    });
-    completedList.sort((a,b)=>(b.completedAt||0)-(a.completedAt||0));
-    render();
-    updateSync(true);
-  }, err=>{
-    updateSync(false);
-    showToast('실시간 연결 오류','error');
-  });
-}
-
-function subscribeSettings(){
-  return onSnapshot(settingsRef(), snap=>{
-    if(snap.exists()){
-      const d=snap.data();
-      if(d.mechanics) mechanics = d.mechanics;
-      manualAvgMin = (d.manualAvgMin!==undefined) ? d.manualAvgMin : null;
-      render();
-    }
-  });
-}
-
-function updateSync(ok){
-  const dot=document.getElementById('sync-dot');
-  dot.style.background = ok ? 'var(--green)' : 'var(--red)';
-}
-
-/* ════ 시간 계산(전체) ════
-   - effClock(): 일시정지를 제외한 '효과적 현재 시각'. 정지 중엔 멈춤.
-   - 단계(phase)별 분리: 진단(dxMs) / 작업(workMs) 누적을 따로 보관.
-   - phaseStartEff: 현재 단계가 시작된 effClock 값(진행중인 단계 경과 계산용).
-   - 진단중→작업중 전환 시 진단시간을 dxMs에 확정하고 작업 타이머를 0부터 시작.
-*/
-function effClock(){
-  const base = pauseState.active ? (pauseState.startedAt||Date.now()) : Date.now();
-  return base - (pauseState.accumMs||0);
-}
-function phaseStartOf(v){
-  return (typeof v.phaseStartEff==='number') ? v.phaseStartEff
-       : (typeof v.createdEff==='number')   ? v.createdEff
-       : (v.createdAt || effClock());
-}
-function vehDxMs(v){   // 진단 누적(정지 제외). 진단중이면 진행분 합산.
-  let ms = (typeof v.dxMs==='number') ? v.dxMs : 0;
-  if(v.status==='diagnosis') ms += Math.max(0, effClock() - phaseStartOf(v));
-  return ms;
-}
-function vehWorkMs(v){  // 작업 누적(정지 제외). 작업중이면 진행분 합산.
-  let ms = (typeof v.workMs==='number') ? v.workMs : 0;
-  if(v.status==='active') ms += Math.max(0, effClock() - phaseStartOf(v));
-  // 구버전 호환: 단계정보 없는 완료건은 workMs(=과거 총소요)만 존재
-  if(ms===0 && v.status==='done' && typeof v.workMs!=='number' && v.completedAt && v.createdAt){
-    return Math.max(0, v.completedAt - v.createdAt);
-  }
-  return ms;
-}
-function vehTotalMs(v){ return vehDxMs(v) + vehWorkMs(v); }
-function fmtDur0(ms){ return fmtDuration(ms) || '0분'; }  // 0도 '0분'으로 표기
-function subscribePause(){
-  return onSnapshot(pauseRef(), snap=>{
-    if(snap.exists()){
-      const d=snap.data();
-      pauseState={active:!!d.active, startedAt:d.startedAt||0, accumMs:d.accumMs||0};
-    } else {
-      pauseState={active:false, startedAt:0, accumMs:0};
-    }
-    updatePauseUI();
-    render();
-  }, err=>{ /* 조용히 무시 */ });
-}
-function updatePauseUI(){
-  const btn=document.getElementById('btn-pause');
-  const banner=document.getElementById('pause-banner');
-  if(!btn) return;
-  if(pauseState.active){
-    btn.textContent='▶ 시간 재개';
-    btn.classList.add('btn-pause-on');
-    if(banner) banner.classList.add('show');
-  } else {
-    btn.textContent='⏸ 시간 멈춤';
-    btn.classList.remove('btn-pause-on');
-    if(banner) banner.classList.remove('show');
-  }
-}
-
-/* ════ 렌더 ════ */
-function render(){
-  const grid=document.getElementById('mechanic-grid');
-  grid.innerHTML='';
-  let totalActive=0, totalDone=0, offCount=0, dayCount=0;
-
-  mechanics.forEach((m,i)=>{
-    const myActives = Object.values(activeVehicles).filter(v=>v.mechanicIdx===i)
-      .sort((a,b)=>(a.createdAt||0)-(b.createdAt||0)).slice(0,4);
-    const myDone   = completedList.filter(v=>v.mechanicIdx===i);
-    // 통계: 진행중 차량 중 휴무/하루가 아닌 것만 카운트
-    myActives.forEach(v=>{ if(!isOffWork(v.work)) totalActive++; });
-    totalDone += myDone.filter(c=>!isHoliday(c.work)).length;
-
-    // 카드 색상/배지 판정은 myActives 배열 기준
-    if(m.status==='holiday' || myActives.some(v=>(v.work||'').includes('휴무'))) offCount++;
-    if(myActives.some(v=>(v.work||'').includes('하루'))) dayCount++;
-
-    const card=document.createElement('div');
-    let cardCls='mechanic-card'+(myActives.length?' has-active':'')+(m.status==='holiday'?' holiday':'')+(m.status==='accident'?' accident':'');
-    if(myActives.some(v=>(v.work||'').includes('휴무')))      cardCls+=' work-holiday';
-    else if(myActives.some(v=>(v.work||'').includes('하루'))) cardCls+=' work-halfday';
-    card.className=cardCls;
-
-    let badgeClass='badge ', badgeText='대기';
-    if(m.status==='holiday'){badgeClass+='badge-holiday';badgeText='휴무';}
-    else if(m.status==='accident'){badgeClass+='badge-accident';badgeText='사고수리';}
-    else if(myActives.some(v=>(v.work||'').includes('휴무'))){badgeClass+='badge-active';badgeText='휴무';}
-    else if(myActives.some(v=>(v.work||'').includes('하루'))){badgeClass+='badge-active';badgeText='하루';}
-    else if(myActives.length){
-      if(myActives.every(v=>v.status==='diagnosis')){badgeClass+='badge-dx';badgeText='진단중';}
-      else{badgeClass+='badge-active';badgeText='진행 '+myActives.length;}
-    }
-    else{badgeClass+='badge-wait';}
-
-    const myDoneJobs = myDone.filter(c=>!isHoliday(c.work)).length;
-    let innerHtml=`
-      <div class="card-header">
-        <div class="card-header-left">
-          <div class="mech-name">${m.name}</div>
-          <div class="mech-count">완료 ${myDoneJobs}대</div>
-        </div>
-        <span class="${badgeClass}">${badgeText}</span>
+  document.getElementById('app').innerHTML=`<div class="tv">
+  <div class="tv-hd">
+    <h1>현대북수원서비스 <i>접수 대기</i></h1>
+    <div class="tv-tot">
+      <div class="tvpill"><b>${w.length}</b><span>대기 차량</span></div>
+      <div class="tvpill r"><b>${sc.length}</b><span>예약 대기</span></div>
+    </div>
+    <div class="tv-now"><div class="t mono" id="tvclock">${hm(Date.now())}</div>
+      <div class="d">${now.getMonth()+1}월 ${now.getDate()}일 (${'일월화수목금토'[now.getDay()]})</div></div>
+  </div>
+  <div class="tv-body">
+    <div class="tv-main">
+      ${w.length? `
+      <div class="heroes">
+        ${hero.map((r,i)=>`<div class="hero ${i===0?'h1':''}">
+          <div class="lbl">${i===0?'다음 차량':'그 다음'}</div>
+          <div class="car">${esc(maskCar(r.car))}</div>
+          <div class="sub">${CFG.tvName?esc(maskName(r.name))+' 고객님':'&nbsp;'}</div>
+          <div class="tag">${pubTag(r)}</div>
+        </div>`).join('')}
+        ${hero.length===1?'<div></div>':''}
       </div>
-    `;
+      <div class="qgrid">
+        ${grid.map((r,i)=>`<div class="qc k-${pubKind(r)}">
+          <div class="n">${i+3}</div>
+          <div style="min-width:0"><div class="car">${esc(maskCar(r.car))}</div>
+          <div class="sub">${r.kind==='resv'?hm(r.resvAt)+' 예약':(r.arrivedAt?hm(r.arrivedAt)+' 접수':'접수')}</div></div>
+        </div>`).join('')}
+        ${w.length>lim?`<div class="qmore">외 ${w.length-lim}대 대기 중</div>`:''}
+      </div>`
+      : `<div class="tv-empty">현재 대기 중인 차량이 없습니다</div>`}
+    </div>
+    <div class="tv-side">
+      <h3>예약 차량 LIST</h3>
+      <div class="sl">${sc.length? sc.map(r=>`<div class="si ${r.resvAt-Date.now()<30*60000?'soon':''}">
+        <em>${hm(r.resvAt)}</em><b>${esc(maskCar(r.car))}</b></div>`).join('')
+        : '<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px 0">없음</div>'}</div>
+    </div>
+  </div>
+  ${NOTICE}
+  </div>
+  <div class="dnav"><button data-m="admin">접수·예약</button><button data-m="mob">기사용</button></div>`;
+  bindNav();
+}
 
-    if(m.status!=='holiday'){
-      innerHtml+=`<div class="card-body">`;
-      if(myActives.length){
-        innerHtml+=`<div class="active-stack${myActives.length>=2?' scroll-limit':''}">`;
-        myActives.forEach(av=>{
-          const isOff = (av.work||'').includes('휴무') || (av.work||'').includes('하루');
-          const isDx  = av.status==='diagnosis';
-          const dxMs   = vehDxMs(av);
-          const workMs = vehWorkMs(av);
-          let timeHtml='';
-          if(!isOff){
-            if(isDx){
-              timeHtml = `<div class="active-elapsed">진단 ${fmtDur0(dxMs)} 경과</div>`;
-            } else {
-              timeHtml = `<div class="active-elapsed">작업 ${fmtDur0(workMs)} 경과</div>`;
-              if(dxMs>0) timeHtml += `<div class="active-subtime">└ 진단 ${fmtDuration(dxMs)}</div>`;
-            }
-          }
-          const rowCls = 'active-row'+(myActives.length>2?' compact':'')+(isDx?' diagnosis':'');
-          innerHtml+=`
-            <div class="${rowCls}" data-act="edit" data-type="active" data-id="${av.docId}">
-              <div class="pulse"></div>
-              <div class="active-left">
-                <div class="active-car">${esc(av.car)}${isDx?'<span class="row-tag dx">진단중</span>':''}</div>
-                <div class="active-work">${esc(av.work)}</div>
-                ${timeHtml}
-              </div>
-              <div class="active-right">
-                <div class="eta-label">완료 예정</div>
-                <div class="eta-time">${av.eta||''}</div>
-              </div>
-            </div>
-          `;
-        });
-        innerHtml+=`</div>`;
-      } else {
-        innerHtml+=`<div class="no-vehicle">진행 중인 차량 없음</div>`;
-      }
+/* ════ ② 고객 휴대폰 (읽기 전용 · 이름 전송 안 함) ════ */
+function vPublic(){
+  const w=waiting(), sc=scheduled();
+  const key=last4(myCar);
+  const idx=key? w.findIndex(r=>last4(r.car)===key) : -1;
+  const sidx=key? sc.findIndex(r=>last4(r.car)===key) : -1;
 
-      innerHtml+=`<div class="card-scroll">`;
-      if(myDone.length>0){
-        const offDone = myDone.filter(c=>(c.work||'').includes('휴무')).length;
-        let extra='';
-        if(offDone>0) extra+=` <span style="color:#ff6b6b">휴무 ${offDone}</span>`;
-        innerHtml+=`
-          <div class="comp-section">
-            <div class="comp-header">
-              <span class="comp-title">완료 <b>${myDoneJobs}</b>대${extra}</span>
-              <button class="comp-toggle" data-act="toggle">▼ 더보기</button>
-            </div>
-            <div class="comp-list">
-              ${myDone.map(c=>{
-                const isOff = (c.work||'').includes('휴무') || (c.work||'').includes('하루');
-                const cw = vehWorkMs(c), cd = vehDxMs(c);
-                let tookHtml='';
-                if(!isOff){
-                  if(cw>0){
-                    tookHtml = `<div class="comp-took">정비 ${fmtDuration(cw)}${cd>0?` <span style="color:var(--cyan)">·진단 ${fmtDuration(cd)}</span>`:''}</div>`;
-                  } else if(cd>0){
-                    tookHtml = `<div class="comp-took" style="color:var(--cyan)">진단 ${fmtDuration(cd)}</div>`;
-                  }
-                }
-                return `
-                <div class="comp-item" data-act="edit" data-type="completed" data-id="${c.docId}">
-                  <div>
-                    <div class="comp-car">${esc(c.car)}</div>
-                    <div class="comp-work">${esc(c.work)}</div>
-                  </div>
-                  <div class="comp-right">
-                    <div class="comp-time">${c.doneTime||''} 완료</div>
-                    ${tookHtml}
-                  </div>
-                </div>
-              `;}).join('')}
-            </div>
-          </div>
-        `;
-      }
-      innerHtml+=`</div>`;
-      innerHtml+=`<button class="add-row" data-act="add" data-idx="${i}">+ 차량 입고 등록</button>`;
-      innerHtml+=`</div>`;
+  let box='';
+  if(key){
+    if(idx>=0){
+      box=`<div class="mybox"><div class="c">${esc(maskCar(w[idx].car))}</div>
+        <div class="big">${idx===0?'곧 들어갑니다':'앞에 대기'}${idx===0?'':`<b>${idx}</b>대`}</div>
+        <button class="x" id="p-clear">다른 차량 조회</button></div>`;
+    } else if(sidx>=0){
+      box=`<div class="mybox"><div class="c">${esc(maskCar(sc[sidx].car))}</div>
+        <div class="big"><b>${hm(sc[sidx].resvAt)}</b>예약이 확인되었습니다<br>
+        <span style="font-size:13px;color:var(--text3)">도착하시면 접수 데스크에 알려주세요</span></div>
+        <button class="x" id="p-clear">다른 차량 조회</button></div>`;
     } else {
-      innerHtml+=`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--red);font-size:24px;font-weight:900">휴무일</div>`;
-    }
-
-    card.innerHTML=innerHtml;
-    grid.appendChild(card);
-  });
-
-  document.getElementById('s-active').textContent=totalActive;
-  document.getElementById('s-done').textContent=totalDone;
-  document.getElementById('s-total').textContent=totalActive+totalDone;
-  document.getElementById('s-off').textContent=offCount+'명';
-  document.getElementById('s-day').textContent=dayCount+'명';
-
-  if(manualAvgMin!=null && manualAvgMin!==''){
-    document.getElementById('s-avg').textContent = fmtDuration(manualAvgMin*60000);
-  } else {
-    const durations = completedList
-      .filter(c=>{
-        const off=(c.work||'').includes('휴무')||(c.work||'').includes('하루');
-        return !off && vehWorkMs(c)>0;   // 작업시간(진단 제외) 기준. 진단만 한 건은 workMs=0 → 자동 제외
-      })
-      .map(c=>vehWorkMs(c));
-    if(durations.length>0){
-      const avg = durations.reduce((a,b)=>a+b,0)/durations.length;
-      document.getElementById('s-avg').textContent = fmtDuration(avg);
-    } else {
-      document.getElementById('s-avg').textContent = '-';
+      box=`<div class="mybox none"><div class="c">${esc(myCar)}</div>
+        <div class="big" style="font-size:14px">오늘 대기 목록에 없습니다<br>
+        <span style="font-size:12.5px;color:var(--text3)">이미 작업에 들어갔거나 접수 전일 수 있습니다</span></div>
+        <button class="x" id="p-clear">다시 조회</button></div>`;
     }
   }
 
-  // ── 평균 진단시간: 진단이 들어간(진단시간>0) 완료 건만 ──
-  const dxEl=document.getElementById('s-dxavg');
-  if(dxEl){
-    const dxDur = completedList
-      .filter(c=>{
-        const off=(c.work||'').includes('휴무')||(c.work||'').includes('하루');
-        return !off && vehDxMs(c)>0;
-      })
-      .map(c=>vehDxMs(c));
-    dxEl.textContent = dxDur.length>0
-      ? fmtDuration(dxDur.reduce((a,b)=>a+b,0)/dxDur.length)
-      : '-';
-  }
+  document.getElementById('app').innerHTML=`<div class="pub">
+  <div class="pub-hd"><h1>현대북수원서비스 <i>실시간 대기 현황</i></h1>
+    <div class="u"><span class="dot" style="width:7px;height:7px"></span> ${hm(Date.now())} 기준 · 자동 갱신</div></div>
+  ${key? box : `<div class="pub-find"><label>내 차량번호 뒤 4자리를 입력하면 순서를 알려드립니다</label>
+    <div class="row"><input id="p-in" inputmode="numeric" maxlength="4" placeholder="3456"><button id="p-go">조회</button></div></div>`}
+
+  <div class="pub-sec">현재 대기 ${w.length}대</div>
+  ${w.length? w.map((r,i)=>`<div class="pr ${(key&&last4(r.car)===key)?'me':''}">
+      <div class="n">${i+1}</div><div class="car">${esc(maskCar(r.car))}</div>
+      <div class="t">${r.kind==='resv'?hm(r.resvAt)+' 예약':(r.arrivedAt?hm(r.arrivedAt)+' 접수':'접수')}</div>
+    </div>`).join('')
+   : `<div class="pub-empty">현재 대기 중인 차량이 없습니다</div>`}
+
+  ${sc.length?`<div class="pub-sec">예약 차량 ${sc.length}대</div>
+    ${sc.slice(0,12).map(r=>`<div class="pr ${(key&&last4(r.car)===key)?'me':''}">
+      <div class="n mono" style="font-size:13px">${hm(r.resvAt)}</div>
+      <div class="car">${esc(maskCar(r.car))}</div></div>`).join('')}`:''}
+
+  ${NOTICE}
+  <div class="pub-note">이 화면은 <b>조회 전용</b>이며, 고객 성함은 표시되지 않습니다.</div></div>`;
+
+  const g=id=>document.getElementById(id);
+  if(g('p-go')) g('p-go').onclick=()=>{
+    const v=last4(g('p-in').value);
+    if(v.length<4){ toast('뒤 4자리를 입력해주세요','err'); return; }
+    myCar=v; localStorage.setItem('bh_q_mycar',v); paint();
+  };
+  if(g('p-in')) g('p-in').onkeydown=e=>{ if(e.key==='Enter') g('p-go').click(); };
+  if(g('p-clear')) g('p-clear').onclick=()=>{ myCar=''; localStorage.removeItem('bh_q_mycar'); paint(); };
 }
 
-function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+/* ════ ③ 접수·예약 ════ */
+function vAdmin(){
+  const w=waiting(), s=scheduled(), tk=rows.filter(r=>r.status==='taken');
+  const exToday=rows.filter(r=>r.kind==='express').length;
+  const over=CFG.exCap>0 && exToday>CFG.exCap;
 
-/* ════ 소요 시간 포맷 (밀리초 → "1시간 23분") ════ */
-function fmtDuration(ms){
-  if(!ms || ms<0) return '';
-  const totalMin = Math.floor(ms/60000);
-  const h = Math.floor(totalMin/60);
-  const m = totalMin%60;
-  if(h>0) return `${h}시간 ${m}분`;
-  return `${m}분`;
-}
+  document.getElementById('app').innerHTML=`${header('admin')}
+  <div class="wrap">
+    <div class="bar">
+      <input class="daysel" type="date" id="a-day" value="${viewDay}">
+      <button class="btn" data-day="0">오늘</button><button class="btn" data-day="1">내일</button>
+      <span class="sp"></span>
+      <button class="btn" id="a-link">고객 링크 복사</button>
+      <button class="btn" id="a-log">배정 내역 🔒</button>
+      <button class="btn btn-p" id="a-bulk">예약 일괄 등록</button>
+      <button class="btn" id="a-set">설정</button>
+    </div>
 
-/* ════ 이벤트 위임 (그리드 카드 클릭 통합 처리) ════ */
-function bindGridEvents(){
-  const grid=document.getElementById('mechanic-grid');
-  grid.addEventListener('click',e=>{
-    const el=e.target.closest('[data-act]');
-    if(!el)return;
-    const act=el.dataset.act;
-    if(act==='toggle'){
-      const list=el.closest('.comp-section').querySelector('.comp-list');
-      const open=list.classList.toggle('open');
-      el.textContent=open?'▲ 접기':'▼ 더보기';
-    } else if(act==='add'){
-      openAdd(parseInt(el.dataset.idx));
-    } else if(act==='edit'){
-      openEdit(el.dataset.type, el.dataset.id);
-    }
-  });
-}
-
-/* ════ 입고 등록 ════ */
-function openAdd(idx){
-  if(!requireUser()) return;
-  document.getElementById('add-idx').value=idx;
-  document.getElementById('a-car').value='';
-  document.getElementById('a-work').value='';
-  fillSelect(document.getElementById('a-eta'),null);
-  document.getElementById('a-status').value='active';
-  document.getElementById('add-modal-title').textContent='🚗 차량 입고 — '+mechanics[idx].name+' 기사';
-  openModal('add-overlay');
-  setTimeout(()=>document.getElementById('a-car').focus(),120);
-};
-
-async function submitAdd(){
-  if(!requireUser()) return;
-  const idx=parseInt(document.getElementById('add-idx').value);
-  const car=document.getElementById('a-car').value.trim();
-  const work=document.getElementById('a-work').value.trim();
-  const eta=document.getElementById('a-eta').value;
-  const status=document.getElementById('a-status').value;
-  if(!car){alert('차량번호를 입력해주세요');return;}
-  if(!work){alert('작업 내용을 입력해주세요');return;}
-  const curActive = Object.values(activeVehicles).filter(v=>v.mechanicIdx===idx).length;
-  if(curActive>=4){ alert('한 기사당 진행중·진단중 차량은 합쳐서 최대 4대까지 등록할 수 있습니다.'); return; }
-  try{
-    const newDoc=doc(collection(db,vehiclesColl()));
-    await setDoc(newDoc,{
-      mechanicIdx:idx, car, work, eta,
-      status, createdAt:Date.now(),
-      createdEff: effClock(),          // 정지 제외 기준 입고시각
-      phaseStartEff: effClock(),       // 현재 단계(진단/작업) 시작 시각
-      dxMs: 0, workMs: 0,              // 진단/작업 누적(분리)
-      wasActive: (status==='active'),  // 한 번이라도 작업중을 거쳤는지
-      originDay: todayKey(),   // 최초 등록일 (이월 3일 제한 기준)
-      carryDays: 0             // 이월된 일수 (0=당일)
-    });
-    closeModal('add-overlay');
-    showToast(`${car} ${status==='diagnosis'?'진단 등록':'입고 등록'} 완료`,'success');
-    addLog('등록', mechanics[idx]?.name, car, work);
-  }catch(e){showToast('저장 실패: '+e.message,'error');}
-};
-
-/* ════ 수정/완료 ════ */
-function openEdit(type,docId){
-  if(!requireUser()) return;
-  editTarget={type,docId};
-  const v = type==='active' ? activeVehicles[docId] : completedList.find(c=>c.docId===docId);
-  if(!v)return;
-  document.getElementById('edit-key').value=docId;
-  document.getElementById('edit-modal-title').textContent='✏️ '+mechanics[v.mechanicIdx].name+' — '+(v.status==='diagnosis'?'진단중':(type==='active'?'진행중':'완료'))+' 차량';
-  document.getElementById('e-car').value=v.car;
-  document.getElementById('e-work').value=v.work;
-  fillSelect(document.getElementById('e-eta'),v.eta);
-  document.getElementById('e-status').value = v.status || (type==='active'?'active':'done');
-  openModal('edit-overlay');
-};
-
-async function submitEdit(){
-  if(!requireUser()) return;
-  const docId=document.getElementById('edit-key').value;
-  const car=document.getElementById('e-car').value.trim();
-  const work=document.getElementById('e-work').value.trim();
-  const eta=document.getElementById('e-eta').value;
-  const status=document.getElementById('e-status').value;
-  if(!car){alert('차량번호 입력해주세요');return;}
-  if(!work){alert('작업 내용 입력해주세요');return;}
-  try{
-    const ref=doc(db,vehiclesColl(),docId);
-    const now=new Date();
-    const doneTime=`${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
-    const orig = editTarget.type==='active'
-      ? activeVehicles[docId]
-      : completedList.find(c=>c.docId===docId);
-
-    /* ── 단계(phase)별 시간 확정 처리 ──
-       상태가 바뀌면 '떠나는 단계'의 경과를 해당 누적(dxMs/workMs)에 더하고,
-       새 단계 시작 시각(phaseStartEff)을 현재로 리셋한다. */
-    const oldStatus = orig.status;
-    const pStart = (typeof orig.phaseStartEff==='number') ? orig.phaseStartEff
-                 : (typeof orig.createdEff==='number')   ? orig.createdEff
-                 : (orig.createdAt || effClock());
-    const curPhaseMs = Math.max(0, effClock() - pStart);
-    let dxMs   = (typeof orig.dxMs==='number')   ? orig.dxMs   : 0;
-    let workMs = (typeof orig.workMs==='number') ? orig.workMs : 0;
-    let phaseStartEff = pStart;
-    if(oldStatus !== status){
-      if(oldStatus==='diagnosis')   dxMs   += curPhaseMs;   // 진단 시간 확정
-      else if(oldStatus==='active') workMs += curPhaseMs;   // 작업 시간 확정
-      phaseStartEff = effClock();                            // 새 단계 시작
-    }
-
-    const payload={
-      ...orig,                          // 기존 필드 전부 보존(originDay, carryDays 등)
-      car, work, eta, status,
-      createdAt: orig.createdAt||Date.now(),
-      createdEff: (typeof orig.createdEff==='number') ? orig.createdEff : (orig.createdAt||effClock()),
-      phaseStartEff, dxMs, workMs,
-      wasActive: (orig.wasActive===true) || (status==='active') || (oldStatus==='active')
-    };
-    delete payload.docId;               // 로컬 전용 필드는 저장하지 않음
-    if(status==='done'){
-      payload.doneTime    = orig.doneTime    || doneTime;
-      payload.completedAt = orig.completedAt || Date.now();
-    } else {
-      // 완료 → 진행/진단 으로 되돌리면 완료시각 제거(시간 누적값은 유지)
-      delete payload.doneTime;
-      delete payload.completedAt;
-    }
-    await setDoc(ref,payload);
-    closeModal('edit-overlay');
-    showToast(`${car} 정보 저장 완료`,'success');
-    const becameDone = (status==='done' && editTarget.type==='active');
-    addLog(becameDone?'완료':'수정', mechanics[orig.mechanicIdx]?.name, car, work);
-  }catch(e){showToast('저장 실패: '+e.message,'error');}
-};
-
-/* ════ 설정 ════ */
-function openSettings(){
-  const grid=document.getElementById('names-grid');
-  grid.innerHTML='';
-  mechanics.forEach((m,i)=>{
-    const st = (m.status==='holiday'||m.status==='accident') ? m.status : 'working';
-    const row=document.createElement('div');
-    row.className='name-row';
-    row.innerHTML=`
-      <label>${i+1}번 기사</label>
-      <input class="form-input" id="sn-${i}" value="${m.name}" style="padding:7px 10px;font-size:13px">
-      <select class="form-input" id="ss-${i}" style="padding:6px 10px;font-size:12px">
-        <option value="working"${st==='working'?' selected':''}>근무</option>
-        <option value="holiday"${st==='holiday'?' selected':''}>휴무</option>
-        <option value="accident"${st==='accident'?' selected':''}>사고수리</option>
-      </select>
-    `;
-    grid.appendChild(row);
-  });
-  const avgInput=document.getElementById('s-avg-input');
-  if(avgInput) avgInput.value = (manualAvgMin!=null && manualAvgMin!=='') ? manualAvgMin : '';
-  openModal('settings-overlay');
-};
-
-async function saveSettings(){
-  mechanics.forEach((m,i)=>{
-    const ni=document.getElementById('sn-'+i);
-    const si=document.getElementById('ss-'+i);
-    if(ni) m.name=ni.value.trim()||m.name;
-    if(si) m.status=si.value;
-  });
-  const avgInput=document.getElementById('s-avg-input');
-  const raw = avgInput ? avgInput.value.trim() : '';
-  manualAvgMin = (raw==='') ? null : Math.max(0, parseInt(raw)||0);
-  try{
-    await setDoc(settingsRef(),{mechanics, manualAvgMin});
-    closeModal('settings-overlay');
-    render();
-    showToast('설정 저장 완료','success');
-  }catch(e){showToast('저장 실패: '+e.message,'error');}
-};
-
-/* ════ 하루 마감 (암호 없음) — '하루' 작업 다음날 이월(최대 3일) ════ */
-async function doCloseDay(){
-  try{
-    const tmrColl = `vehicles_${tomorrowKey()}`;
-    const snap = await getDocs(collection(db, vehiclesColl()));
-    let carried=0;
-    for(const d of snap.docs){
-      const v = d.data();
-      const isDay = (v.work||'').includes('하루');
-      if(v.status==='active' && isDay){
-        const curCarry = (typeof v.carryDays==='number') ? v.carryDays : 0;
-        if(curCarry < 2){   // 0=당일,1=2일째,2=3일째 → 2면 더 이월 안 함
-          const nDoc = doc(collection(db, tmrColl));
-          await setDoc(nDoc, {
-            mechanicIdx: v.mechanicIdx,
-            car: v.car, work: v.work, eta: v.eta,
-            status: 'active',
-            createdAt: v.createdAt || Date.now(),
-            originDay: v.originDay || todayKey(),
-            carryDays: curCarry + 1
-          });
-          carried++;
-        }
-      }
-    }
-    closeModal('reset-overlay');
-    showToast(carried>0 ? `하루 마감 완료 · '하루' 작업 ${carried}건 내일로 이월` : '하루 마감 완료','success');
-  }catch(e){ showToast('마감 실패: '+e.message,'error'); }
-}
-
-/* ════ 전체 초기화 (암호 1007) ════ */
-const RESET_PW = '1007';
-async function doFullReset(){
-  const pw=document.getElementById('reset-pw').value.trim();
-  if(pw!==RESET_PW){ alert('초기화 암호가 올바르지 않습니다'); return; }
-  try{
-    const snap=await getDocs(collection(db,vehiclesColl()));
-    await Promise.all(snap.docs.map(d=>deleteDoc(doc(db,vehiclesColl(),d.id))));
-    const lsnap=await getDocs(collection(db,logsColl()));
-    await Promise.all(lsnap.docs.map(d=>deleteDoc(doc(db,logsColl(),d.id))));
-    await setDoc(pauseRef(), {active:false, startedAt:0, accumMs:0});  // 일시정지 상태도 초기화
-    closeModal('reset-overlay');
-    showToast('전체 초기화 완료','success');
-  }catch(e){showToast('초기화 실패: '+e.message,'error');}
-}
-
-/* ════ 전체 시간 멈춤 토글 (암호 1007) ════ */
-const PAUSE_PW = '1007';
-function openPauseModal(){
-  const resuming = pauseState.active;
-  document.getElementById('pause-modal-title').textContent = resuming ? '▶ 전체 시간 재개' : '⏸ 전체 시간 멈춤';
-  document.getElementById('pause-modal-desc').innerHTML = resuming
-    ? '멈춰 있던 경과 시간을 다시 진행시킵니다.<br>정지되어 있던 동안은 작업시간에서 제외됩니다.'
-    : '진행중·진단중 모든 차량의 경과 시간이 멈춥니다.<br>재개하면 멈춘 시점부터 이어서 계산됩니다.';
-  document.getElementById('btn-pause-confirm').textContent = resuming ? '재개' : '멈춤';
-  document.getElementById('pause-pw').value='';
-  openModal('pause-overlay');
-  setTimeout(()=>document.getElementById('pause-pw').focus(),120);
-}
-async function confirmPauseToggle(){
-  const pw=document.getElementById('pause-pw').value.trim();
-  if(pw!==PAUSE_PW){ alert('암호가 올바르지 않습니다'); return; }
-  try{
-    const now=Date.now();
-    let next;
-    if(pauseState.active){
-      const added = Math.max(0, now - (pauseState.startedAt||now)); // 이번 정지 구간
-      next = { active:false, startedAt:0, accumMs:(pauseState.accumMs||0)+added };
-    } else {
-      next = { active:true, startedAt:now, accumMs:(pauseState.accumMs||0) };
-    }
-    await setDoc(pauseRef(), next);
-    closeModal('pause-overlay');
-    showToast(next.active?'전체 시간 멈춤':'전체 시간 재개','success');
-  }catch(e){ showToast('처리 실패: '+e.message,'error'); }
-}
-
-/* ════ 차량 삭제 (암호 0070) ════ */
-const DELETE_PW = '0070';
-let deleteTarget = null; // {docId, car, work, mechanicName}
-function openDeleteModal(){
-  if(!editTarget) return;
-  const docId = editTarget.docId;
-  const v = editTarget.type==='active' ? activeVehicles[docId] : completedList.find(c=>c.docId===docId);
-  if(!v){ showToast('대상을 찾을 수 없습니다','error'); return; }
-  deleteTarget = { docId, car:v.car, work:v.work, mechanicName:mechanics[v.mechanicIdx]?.name||'' };
-  document.getElementById('delete-target-info').textContent =
-    `${deleteTarget.mechanicName} 기사 · ${deleteTarget.car} (${deleteTarget.work})`;
-  document.getElementById('delete-pw').value='';
-  closeModal('edit-overlay');
-  openModal('delete-overlay');
-}
-async function confirmDelete(){
-  const pw=document.getElementById('delete-pw').value.trim();
-  if(pw!==DELETE_PW){ alert('삭제 암호가 올바르지 않습니다'); return; }
-  if(!deleteTarget){ closeModal('delete-overlay'); return; }
-  try{
-    await deleteDoc(doc(db, vehiclesColl(), deleteTarget.docId));
-    addLog('삭제', deleteTarget.mechanicName, deleteTarget.car, deleteTarget.work);
-    closeModal('delete-overlay');
-    showToast(`${deleteTarget.car} 삭제 완료`,'success');
-    deleteTarget=null;
-  }catch(e){showToast('삭제 실패: '+e.message,'error');}
-}
-
-/* ════ 기기 사용자 지정 ════ */
-function updateUserLabel(){
-  const lbl=document.getElementById('device-user-label');
-  if(deviceUser){ lbl.textContent='👤 '+deviceUser; lbl.parentElement.style.borderColor='var(--green)'; lbl.style.color='var(--green)'; }
-  else{ lbl.textContent='사용자 미지정'; lbl.parentElement.style.borderColor='var(--red)'; lbl.style.color='#ff6b6b'; }
-}
-/* 사용자 미지정이면 차단하고 지정 창을 띄움. 통과하면 true */
-function requireUser(){
-  if(deviceUser) return true;
-  showToast('먼저 이 기기 사용자를 지정해주세요','error');
-  openUserModal();
-  return false;
-}
-const USER_OPTIONS = ['프론트1','프론트2','프론트3','프론트4','프론트5','메인','정비','마스터'];
-const MASTER_PW = '1007';
-function openUserModal(){
-  const sel=document.getElementById('user-select');
-  sel.innerHTML='<option value="">— 사용자 선택 —</option>';
-  USER_OPTIONS.forEach(name=>{
-    const o=document.createElement('option');o.value=name;o.textContent=name;
-    if(name===deviceUser)o.selected=true;
-    sel.appendChild(o);
-  });
-  document.getElementById('user-custom').value = (deviceUser && !USER_OPTIONS.includes(deviceUser)) ? deviceUser : '';
-  document.getElementById('user-master-pw').value='';
-  toggleMasterPw();
-  openModal('user-overlay');
-}
-function toggleMasterPw(){
-  const sel=document.getElementById('user-select').value;
-  const row=document.getElementById('master-pw-row');
-  row.style.display = (sel==='마스터') ? 'block' : 'none';
-}
-function saveUser(){
-  const custom=document.getElementById('user-custom').value.trim();
-  const sel=document.getElementById('user-select').value;
-  const name = custom || sel;
-  if(!name){ alert('사용자를 선택하거나 실명을 입력해주세요'); return; }
-  if(sel==='마스터' && !custom){
-    const pw=document.getElementById('user-master-pw').value.trim();
-    if(pw!==MASTER_PW){ alert('마스터 암호가 올바르지 않습니다'); return; }
-  }
-  deviceUser=name;
-  localStorage.setItem('bh_device_user', name);
-  updateUserLabel();
-  closeModal('user-overlay');
-  showToast('이 기기 사용자: '+name,'success');
-}
-
-/* ════ 이력 보기 ════ */
-async function openHistory(){
-  const box=document.getElementById('history-list');
-  box.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">불러오는 중...</div>';
-  openModal('history-overlay');
-  try{
-    const snap=await getDocs(collection(db, logsColl()));
-    const logs=[];
-    snap.forEach(d=>logs.push(d.data()));
-    logs.sort((a,b)=>(b.ts||0)-(a.ts||0));
-    if(logs.length===0){ box.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px">오늘 기록된 이력이 없습니다.</div>'; return; }
-    const color={'등록':'#2979ff','수정':'#ffd600','완료':'#00e676','삭제':'#ff1744'};
-    box.innerHTML=logs.map(l=>`
-      <div style="display:flex;align-items:center;gap:10px;padding:9px 6px;border-bottom:1px solid var(--border)">
-        <span style="font-family:var(--mono);font-size:12px;color:var(--text3);flex-shrink:0">${l.time||''}</span>
-        <span style="font-size:12px;font-weight:700;color:${color[l.action]||'#fff'};flex-shrink:0;min-width:34px">${l.action||''}</span>
-        <span style="font-size:13px;color:var(--text);flex:1;min-width:0">${esc(l.car||'')} <span style="color:var(--text3)">${esc(l.detail||'')}</span></span>
-        <span style="font-size:12px;color:var(--text2);flex-shrink:0">👤 ${esc(l.user||'')}</span>
+    <div class="panel">
+      <h2>빠른 등록 <span>· 차량번호 입력 후 Enter를 누르면 바로 다음 건으로 넘어갑니다</span></h2>
+      <div class="qf">
+        <select id="q-kind"><option value="walk">현장접수</option><option value="express">긴급</option><option value="resv">예약</option></select>
+        <input id="q-time" type="time" class="mono" value="09:00">
+        <input id="q-car" class="mono" placeholder="12가3456">
+        <input id="q-name" placeholder="고객명">
+        <input id="q-work" placeholder="작업 내용 (선택)">
+        <button class="btn btn-g" id="q-add" style="white-space:nowrap">추가</button>
       </div>
-    `).join('');
-  }catch(e){
-    box.innerHTML='<div style="color:#ff6b6b;text-align:center;padding:20px">이력 로딩 실패: '+e.message+'</div>';
+      <p class="hint">현장접수·긴급은 시간 입력이 필요 없습니다 — 등록하는 <b>지금 시각이 접수 시각</b>이 됩니다.</p>
+      ${exToday?`<div class="warnbox">오늘 긴급 <b>${exToday}건</b>${CFG.exCap>0?` / 허용 ${CFG.exCap}건`:''}${over?' — <b>허용 건수를 넘었습니다.</b> 긴급이 늘수록 일반 대기 고객의 대기시간이 그대로 길어집니다.':''}</div>`:''}
+    </div>
+
+    <div class="panel"><h2>예정 (도착 전) · ${s.length}건</h2>
+      ${s.length?tbl(s,true):'<p class="hint">등록된 예약이 없습니다.</p>'}</div>
+
+    <div class="panel"><h2>대기 중 · ${w.length}건 <span>· 위에서부터 실제 순서입니다</span></h2>
+      ${w.length?tbl(w,false,true):'<p class="hint">대기 중인 차량이 없습니다.</p>'}</div>
+
+    <div class="panel"><h2>배정 완료 · ${tk.length}건</h2>
+      ${tk.length?tbl(tk):'<p class="hint">아직 없습니다.</p>'}</div>
+  </div>`;
+  bindAdmin();
+}
+function tbl(list,showArrive,showOrder){
+  return `<div style="overflow-x:auto"><table class="lst"><thead><tr>
+    ${showOrder?'<th style="width:38px">순번</th>':''}
+    <th style="width:72px">구분</th><th>차량번호</th><th>고객명</th><th>작업</th>
+    <th style="width:88px">시각</th><th style="width:80px">상태</th><th style="width:148px"></th></tr></thead><tbody>
+  ${list.map((r,i)=>`<tr class="${r.status==='taken'?'taken':''}">
+    ${showOrder?`<td class="mono" style="font-weight:700;color:${i===0?'var(--green)':'var(--text2)'}">${i+1}</td>`:''}
+    <td><span class="st st-${r.kind}">${KIND[r.kind]||r.kind}</span></td>
+    <td class="pl">${esc(r.car)}</td><td>${esc(r.name||'-')}</td>
+    <td style="color:var(--text2)">${esc(r.work||'')}</td>
+    <td class="mono" style="color:var(--text2)">${r.kind==='resv'&&r.resvAt?hm(r.resvAt):(r.arrivedAt?hm(r.arrivedAt):'-')}${isLate(r)?' <span style="color:var(--orange)">지각</span>':''}</td>
+    <td><span class="st st-${r.status}">${({scheduled:'예정',waiting:'대기중',taken:'배정완료'})[r.status]}</span></td>
+    <td style="text-align:right;white-space:nowrap">
+      ${showArrive?`<button class="mini g" data-arrive="${r.id}">도착</button> `:''}
+      ${r.status==='taken'?`<button class="mini" data-restore="${r.id}">되돌리기</button> `:''}
+      <button class="mini" data-edit="${r.id}">수정</button></td></tr>`).join('')}</tbody></table></div>`;
+}
+
+/* ════ ④ 기사용 ════ */
+function vMob(){
+  const w=waiting();
+  document.getElementById('app').innerHTML=`${header('mob')}
+  <div class="mwrap">
+    <div class="me">👤 <b>${esc(me||'미지정')}</b><span class="sp"></span>
+      <button class="mini" id="m-who">${me?'변경':'이름 설정'}</button></div>
+    ${w.length? w.map((r,i)=>`<div class="mcard${i===0?' next':''}">
+      <div class="mtop"><div class="mnum">${i+1}</div>
+        <div style="flex:1;min-width:0"><div class="mcar">${esc(r.car)}</div>
+        <div class="mname">${esc(r.name||'-')} · <span class="st st-${r.kind}">${KIND[r.kind]}</span>
+        ${r.kind==='resv'?` <span style="color:var(--cyan)">${hm(r.resvAt)}</span>`:''}${isLate(r)?' <span style="color:var(--orange)">지각</span>':''}</div></div></div>
+      ${r.work?`<div class="mwork">${esc(r.work)}</div>`:''}
+      <button class="mtake" data-take="${r.id}">작업지시서 받음 — 목록에서 제거</button></div>`).join('')
+    : `<div style="text-align:center;padding:70px 10px;color:var(--text3);font-size:17px">대기 중인 차량이 없습니다</div>`}
+  </div>`;
+  bindMob();
+}
+
+const header=cur=>`<div class="hd"><h1>현대북수원서비스 <i>접수 대기</i></h1>
+  <span class="dot"></span><span class="clock" id="hclock">${hm(Date.now())}</span><span class="sp"></span>
+  <div class="tabs">
+    <button class="tab${cur==='tv'?' on':''}" data-m="tv">대기실 TV</button>
+    <button class="tab${cur==='public'?' on':''}" data-m="public">고객 화면</button>
+    <button class="tab${cur==='admin'?' on':''}" data-m="admin">접수·예약</button>
+    <button class="tab${cur==='mob'?' on':''}" data-m="mob">기사용</button>
+  </div></div>`;
+
+/* ════ 바인딩 ════ */
+const bindNav=()=>document.querySelectorAll('[data-m]').forEach(b=>b.onclick=()=>setMode(b.dataset.m));
+function bindAdmin(){
+  bindNav();
+  const g=id=>document.getElementById(id);
+  g('a-day').onchange=e=>{viewDay=e.target.value;subscribe(viewDay);};
+  document.querySelectorAll('[data-day]').forEach(b=>b.onclick=()=>{viewDay=dayPlus(+b.dataset.day);subscribe(viewDay);});
+  g('a-bulk').onclick=()=>{g('bk-text').value='';g('bk-prev').textContent='';open_('ov-bulk');};
+  g('a-set').onclick=openSet;
+  g('a-log').onclick=openLog;
+  g('a-link').onclick=()=>{
+    const u=new URL(location); u.searchParams.set('v','public');
+    navigator.clipboard?.writeText(u.toString()).then(()=>toast('고객용 링크를 복사했습니다','ok'),()=>prompt('이 주소를 복사하세요',u.toString()));
+  };
+  g('q-add').onclick=quickAdd;
+  ['q-car','q-name','q-work'].forEach(id=>g(id).onkeydown=e=>{if(e.key==='Enter')quickAdd();});
+  const sync=()=>{ addKind=g('q-kind').value; g('q-time').disabled=addKind!=='resv';
+    g('q-time').style.opacity=addKind==='resv'?'1':'.3'; };
+  g('q-kind').onchange=sync; sync();
+  document.querySelectorAll('[data-arrive]').forEach(b=>b.onclick=()=>arrive(b.dataset.arrive));
+  document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>restore(b.dataset.restore));
+  document.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>openEdit(b.dataset.edit));
+}
+function bindMob(){
+  bindNav();
+  document.getElementById('m-who').onclick=()=>{
+    const n=prompt('본인 이름을 입력하세요 (이 휴대폰에 저장됩니다)',me||'');
+    if(n===null)return; me=n.trim(); localStorage.setItem('bh_q_me',me); paint();
+  };
+  document.querySelectorAll('[data-take]').forEach(b=>b.onclick=()=>take(b.dataset.take));
+}
+
+async function quickAdd(){
+  const g=id=>document.getElementById(id);
+  const kind=g('q-kind').value, car=g('q-car').value.trim(), name=g('q-name').value.trim(), work=g('q-work').value.trim();
+  if(!car){ toast('차량번호를 입력하세요','err'); g('q-car').focus(); return; }
+  if(rows.find(r=>r.car===car&&r.status!=='taken') && !confirm(`${car} 차량이 이미 등록돼 있습니다. 그래도 추가할까요?`)) return;
+  if(kind==='express'){
+    const n=rows.filter(r=>r.kind==='express').length;
+    if(CFG.exCap>0 && n>=CFG.exCap &&
+       !confirm(`오늘 긴급이 이미 ${n}건입니다 (허용 ${CFG.exCap}건).\n\n긴급 1건이 늘면 일반 대기 고객 전원의 대기시간이 그만큼 길어집니다.\n그래도 등록할까요?`)) return;
+    if(!confirm('긴급 접수는 추가 요금이 발생합니다.\n고객에게 금액을 안내하고 동의를 받으셨습니까?')) return;
   }
+  const now=Date.now();
+  try{
+    await addDoc_({ car, name, work, kind, day:viewDay,
+      resvAt: kind==='resv'? at(viewDay,g('q-time').value) : null,
+      arrivedAt: kind==='resv'? null : now,
+      status: kind==='resv'? 'scheduled' : 'waiting',
+      createdAt: now });
+    g('q-car').value=''; g('q-name').value=''; g('q-work').value='';
+    if(kind==='resv'){
+      const [h,m]=g('q-time').value.split(':').map(Number);
+      const nx=new Date(0,0,0,h,m+30);
+      g('q-time').value=`${String(nx.getHours()).padStart(2,'0')}:${String(nx.getMinutes()).padStart(2,'0')}`;
+    }
+    g('q-car').focus(); toast(`${car} 등록`,'ok');
+  }catch(e){ toast('저장 실패: '+e.message,'err'); }
 }
-
-
-/* ════ 엑셀 마감 (기사별 작업 내역 다운로드) ════ */
-function minutesOf(c){    // 작업시간(분), 정지 제외
-  const ms = vehWorkMs(c);
-  return ms>0 ? Math.round(ms/60000) : null;
+async function arrive(id){
+  const r=rows.find(x=>x.id===id); if(!r)return;
+  const o={...r}; delete o.id; o.arrivedAt=Date.now(); o.status='waiting';
+  try{ await put(id,o); toast(`${r.car} 도착 처리`,'ok'); }catch(e){ toast('실패: '+e.message,'err'); }
 }
-function dxMinutesOf(c){  // 진단시간(분), 정지 제외
-  const ms = vehDxMs(c);
-  return ms>0 ? Math.round(ms/60000) : null;
+async function take(id){
+  const r=rows.find(x=>x.id===id); if(!r)return;
+  if(!me){ toast('먼저 본인 이름을 설정하세요','err'); return; }
+  const o={...r}; delete o.id; o.status='taken'; o.takenAt=Date.now(); o.takenBy=me;
+  try{
+    await put(id,o); lastTaken={id,prev:{...r}};
+    document.getElementById('mundo-t').textContent=`${r.car} 제거됨`;
+    document.getElementById('mundo').classList.add('show');
+    clearTimeout(undoTimer); undoTimer=setTimeout(()=>document.getElementById('mundo').classList.remove('show'),8000);
+  }catch(e){ toast('실패: '+e.message,'err'); }
 }
-function isOffWork(w){ w=w||''; return w.includes('휴무')||w.includes('하루'); }
-function isHoliday(w){ w=w||''; return w.includes('휴무'); }
-function isDxOnly(c){ return !isOffWork(c.work) && vehWorkMs(c)<=0 && vehDxMs(c)>0; } // 진단만 하고 완료
+async function restore(id){
+  const r=rows.find(x=>x.id===id); if(!r)return;
+  const o={...r}; delete o.id;
+  o.status=o.arrivedAt?'waiting':'scheduled'; o.takenAt=null; o.takenBy=null;
+  try{ await put(id,o); toast(`${r.car} 대기열로 복귀`,'ok'); }catch(e){ toast('실패','err'); }
+}
+document.getElementById('mundo-b').onclick=async()=>{
+  if(!lastTaken)return;
+  const o={...lastTaken.prev}; delete o.id;
+  try{ await put(lastTaken.id,o); document.getElementById('mundo').classList.remove('show'); toast('되돌렸습니다','ok'); lastTaken=null; }
+  catch(e){ toast('실패','err'); }
+};
 
-/* XLSX 라이브러리 확보 (cdnjs 차단 대비 다중 CDN 우회) */
-let _xlsxLoading=null;
-function ensureXLSX(){
-  if(typeof window.XLSX!=='undefined') return Promise.resolve(true);
-  if(_xlsxLoading) return _xlsxLoading;
-  const urls=[
-    'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js',
-    'https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js',
-    'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
-  ];
-  _xlsxLoading=new Promise(resolve=>{
-    let i=0;
-    const tryNext=()=>{
-      if(typeof window.XLSX!=='undefined'){ resolve(true); return; }
-      if(i>=urls.length){ resolve(false); return; }
-      const sc=document.createElement('script');
-      sc.src=urls[i++];
-      sc.onload=()=>resolve(true);
-      sc.onerror=tryNext;
-      document.head.appendChild(sc);
-    };
-    tryNext();
+/* ── 수정 ── */
+let edId=null;
+function openEdit(id){
+  const r=rows.find(x=>x.id===id); if(!r)return;
+  edId=id; const g=i=>document.getElementById(i);
+  g('ed-title').textContent=r.car;
+  g('ed-car').value=r.car; g('ed-name').value=r.name||''; g('ed-work').value=r.work||'';
+  g('ed-kind').value=r.kind; g('ed-status').value=r.status; g('ed-time').value=r.resvAt?hm(r.resvAt):'';
+  open_('ov-edit');
+}
+document.getElementById('ed-save').onclick=async()=>{
+  const r=rows.find(x=>x.id===edId); if(!r)return;
+  const g=i=>document.getElementById(i).value;
+  const o={...r}; delete o.id;
+  o.car=g('ed-car').trim(); o.name=g('ed-name').trim(); o.work=g('ed-work').trim();
+  o.kind=g('ed-kind'); o.status=g('ed-status');
+  o.resvAt = o.kind==='resv'? at(r.day,g('ed-time')) : null;
+  if(o.status==='scheduled') o.arrivedAt=null;
+  else if(!o.arrivedAt) o.arrivedAt=Date.now();
+  try{ await put(edId,o); close_('ov-edit'); toast('저장 완료','ok'); }catch(e){ toast('실패: '+e.message,'err'); }
+};
+document.getElementById('ed-del').onclick=async()=>{
+  const pw=prompt('삭제하려면 관리자 암호를 입력하세요'); if(pw===null)return;
+  if(pw.trim()!==PW.ADMIN){ alert('암호가 올바르지 않습니다'); return; }
+  try{ await deleteDoc(doc(db,COLL,edId)); close_('ov-edit'); toast('삭제됨','ok'); }catch(e){ toast('실패','err'); }
+};
+document.getElementById('ed-cancel').onclick=()=>close_('ov-edit');
+
+/* ── 일괄 등록 ── */
+function parseBulk(txt){
+  const out=[],bad=[];
+  txt.split(/\r?\n/).forEach((ln,i)=>{
+    const s=ln.trim(); if(!s)return;
+    let p = s.includes('\t')? s.split('\t') : (s.includes(',')? s.split(',') : s.split(/\s+/));
+    p=p.map(x=>x.trim()).filter(Boolean);
+    const t=p[0]||'';
+    if(!/^\d{1,2}:\d{2}$/.test(t)){ bad.push(`${i+1}행: 시간 형식 아님 (${s.slice(0,20)})`); return; }
+    if(!p[1]){ bad.push(`${i+1}행: 차량번호 없음`); return; }
+    const [h,m]=t.split(':');
+    out.push({time:`${h.padStart(2,'0')}:${m}`, car:p[1], name:p[2]||'', work:p.slice(3).join(' ')});
   });
-  return _xlsxLoading;
+  return {out,bad};
 }
-
-async function exportExcel(){
-  const ok = await ensureXLSX();
-  if(!ok || typeof window.XLSX==='undefined'){
-    alert('엑셀 모듈(XLSX)을 불러오지 못했습니다.\n\n· 인터넷 연결을 확인해주세요.\n· 공업소 네트워크가 외부 라이브러리(CDN)를 차단하고 있을 수 있습니다.');
-    return;
+document.getElementById('bk-text').oninput=e=>{
+  const {out,bad}=parseBulk(e.target.value);
+  document.getElementById('bk-prev').innerHTML=`인식된 예약 <b style="color:var(--green)">${out.length}건</b>`
+    +(bad.length?`<br><span style="color:#ff6b6b">무시됨 ${bad.length}행</span><br><span style="font-size:11.5px;color:var(--text3)">${bad.slice(0,5).map(esc).join('<br>')}</span>`:'');
+};
+document.getElementById('bk-go').onclick=async()=>{
+  const {out}=parseBulk(document.getElementById('bk-text').value);
+  if(!out.length){ toast('등록할 내용이 없습니다','err'); return; }
+  const b=document.getElementById('bk-go'); b.disabled=true; b.textContent='등록 중...';
+  let ok=0;
+  for(const r of out){
+    try{ await addDoc_({car:r.car,name:r.name,work:r.work,kind:'resv',day:viewDay,
+      resvAt:at(viewDay,r.time),arrivedAt:null,status:'scheduled',createdAt:Date.now()}); ok++; }catch(e){}
   }
-  if(completedList.length===0){
-    alert('완료된 차량이 없습니다.\n\n엑셀 마감 파일에는 "완료" 상태로 처리된 차량만 들어갑니다.\n진행중·진단중 차량을 완료 처리한 뒤 다시 눌러주세요.');
-    return;
-  }
- try{
-  const d=new Date();
-  const dateStr=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  b.disabled=false; b.textContent='등록';
+  close_('ov-bulk'); toast(`${ok}건 등록 완료`,'ok');
+};
+document.getElementById('bk-cancel').onclick=()=>close_('ov-bulk');
 
-  /* ── 시트1: 차량별 상세 (진단/작업/총 시간 분리) ── */
-  const detailRows=[['기사','차량번호','작업내용','입고시각','완료시각','진단시간(분)','작업시간(분)','총시간(분)','구분']];
-  mechanics.forEach((m,i)=>{
-    completedList.filter(c=>c.mechanicIdx===i).forEach(c=>{
-      const inT = c.createdAt ? new Date(c.createdAt) : null;
-      const inStr = inT ? `${String(inT.getHours()).padStart(2,'0')}:${String(inT.getMinutes()).padStart(2,'0')}` : '';
-      const off = isOffWork(c.work);
-      const dxMin = off ? null : dxMinutesOf(c);
-      const wkMin = off ? null : minutesOf(c);
-      const totMin = (dxMin||0)+(wkMin||0);
-      let gubun = '정비';
-      if(off) gubun='휴무/하루';
-      else if((wkMin||0)===0 && (dxMin||0)>0) gubun='진단만';
-      else if((dxMin||0)>0) gubun='진단+정비';
-      detailRows.push([
-        m.name, c.car||'', c.work||'',
-        inStr, c.doneTime||'',
-        off ? '' : (dxMin!=null?dxMin:''),
-        off ? '' : (wkMin!=null?wkMin:''),
-        off ? '' : (totMin||''),
-        gubun
-      ]);
-    });
-  });
-
-  /* ── 시트2: 기사별 요약 ── */
-  const sumRows=[['기사','정비 완료 대수','총 작업시간(분)','평균 작업시간(분)','총 진단시간(분)','휴무/하루 건수']];
-  let grandCount=0, grandMin=0, grandJobs=0, grandDx=0;
-  mechanics.forEach((m,i)=>{
-    const mine=completedList.filter(c=>c.mechanicIdx===i);
-    const repairs=mine.filter(c=>!isOffWork(c.work) && vehWorkMs(c)>0);  // 작업시간 있는 정비건
-    const offs=mine.filter(c=>isOffWork(c.work));
-    const wkArr=repairs.map(minutesOf).filter(x=>x!=null);
-    const totalMin=wkArr.reduce((a,b)=>a+b,0);
-    const avgMin=wkArr.length?Math.round(totalMin/wkArr.length):'';
-    const dxArr=mine.filter(c=>!isOffWork(c.work)).map(dxMinutesOf).filter(x=>x!=null);
-    const totalDx=dxArr.reduce((a,b)=>a+b,0);
-    sumRows.push([m.name, repairs.length, totalMin||'', avgMin, totalDx||'', offs.length]);
-    grandCount+=repairs.length; grandMin+=totalMin; grandJobs+=wkArr.length; grandDx+=totalDx;
-  });
-  const grandAvg=grandJobs?Math.round(grandMin/grandJobs):'';
-  sumRows.push(['── 합계 ──', grandCount, grandMin||'', grandAvg, grandDx||'', '']);
-
-  /* ── 워크북 생성 ── */
-  const wb=window.XLSX.utils.book_new();
-  const ws1=window.XLSX.utils.aoa_to_sheet(sumRows);
-  ws1["!cols"]=[{wch:12},{wch:14},{wch:16},{wch:16},{wch:16},{wch:14}];
-  window.XLSX.utils.book_append_sheet(wb, ws1, '기사별 요약');
-  const ws2=window.XLSX.utils.aoa_to_sheet(detailRows);
-  ws2['!cols']=[{wch:12},{wch:16},{wch:24},{wch:10},{wch:10},{wch:12},{wch:12},{wch:11},{wch:11}];
-  window.XLSX.utils.book_append_sheet(wb, ws2, '차량별 상세');
-
-  window.XLSX.writeFile(wb, `현대북수원서비스_정비마감_${dateStr}.xlsx`);
-  showToast('엑셀 파일 다운로드 완료','success');
- }catch(e){
-   alert('엑셀 생성 중 오류가 발생했습니다.\n'+(e&&e.message?e.message:e));
- }
+/* ── 배정 내역 (암호 보호) ── */
+function openLog(){
+  document.getElementById('lg-lock').style.display='block';
+  document.getElementById('lg-body').style.display='none';
+  document.getElementById('lg-pw').value='';
+  open_('ov-log');
+  setTimeout(()=>document.getElementById('lg-pw').focus(),80);
 }
+function renderLog(){
+  const tk=rows.filter(r=>r.status==='taken').sort((a,b)=>(b.takenAt||0)-(a.takenAt||0));
+  document.getElementById('lg-title').textContent=`배정 내역 · ${viewDay} · ${tk.length}건`;
 
-/* ════ UI 유틸 ════ */
-function openModal(id){document.getElementById(id).classList.add('open');}
-function closeModal(id){document.getElementById(id).classList.remove('open');}
+  const by={};
+  tk.forEach(r=>{ const n=r.takenBy||'(미지정)'; by[n]=(by[n]||0)+1; });
+  const sum=Object.entries(by).sort((a,b)=>b[1]-a[1]);
+  document.getElementById('lg-sum').innerHTML = sum.length
+    ? sum.map(([n,c])=>`<span class="st st-waiting" style="font-size:12.5px;padding:6px 12px">${esc(n)} <b class="mono">${c}</b></span>`).join('')
+    : '';
 
-function showToast(msg,type=''){
-  const t=document.getElementById('toast');
-  t.textContent=msg; t.className='toast'+(type?' '+type:'');
-  void t.offsetWidth; t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'),2800);
+  document.getElementById('lg-list').innerHTML = tk.length
+    ? `<table class="lst"><thead><tr><th style="width:62px">시각</th><th>차량번호</th><th style="width:64px">구분</th>
+       <th>고객명</th><th style="width:96px">가져간 기사</th></tr></thead><tbody>
+       ${tk.map(r=>`<tr><td class="mono" style="color:var(--text2)">${r.takenAt?hm(r.takenAt):'-'}</td>
+       <td class="pl">${esc(r.car)}</td><td><span class="st st-${r.kind}">${KIND[r.kind]||r.kind}</span></td>
+       <td style="color:var(--text2)">${esc(r.name||'-')}</td>
+       <td><b style="color:var(--green)">${esc(r.takenBy||'(미지정)')}</b></td></tr>`).join('')}</tbody></table>`
+    : '<p class="hint">아직 가져간 작업지시서가 없습니다.</p>';
 }
+document.getElementById('lg-open').onclick=()=>{
+  if(document.getElementById('lg-pw').value.trim()!==PW.ADMIN){ alert('관리자 암호가 올바르지 않습니다'); return; }
+  document.getElementById('lg-lock').style.display='none';
+  document.getElementById('lg-body').style.display='block';
+  renderLog();
+};
+document.getElementById('lg-cancel').onclick=()=>close_('ov-log');
+document.getElementById('lg-close').onclick=()=>close_('ov-log');
+document.getElementById('lg-pw').onkeydown=e=>{ if(e.key==='Enter')document.getElementById('lg-open').click(); };
 
+/* ── 설정 ── */
+function openSet(){
+  const g=i=>document.getElementById(i);
+  g('st-mcar').checked=!!CFG.maskCar; g('st-tvname').checked=!!CFG.tvName;
+  g('st-rows').value=CFG.rows??12; g('st-grace').value=CFG.grace??30;
+  g('st-excap').value=CFG.exCap??3; g('st-exfirst').checked=!!CFG.exFirst; g('st-exbadge').checked=!!CFG.exBadge;
+  g('st-pw').value=''; open_('ov-set');
+}
+document.getElementById('st-save').onclick=async()=>{
+  const g=i=>document.getElementById(i);
+  if(g('st-pw').value.trim()!==PW.ADMIN){ alert('관리자 암호가 올바르지 않습니다'); return; }
+  const n={maskCar:g('st-mcar').checked, tvName:g('st-tvname').checked,
+    rows:Math.max(4,Math.min(24,+g('st-rows').value||12)),
+    grace:Math.max(0,Math.min(120,+g('st-grace').value||0)),
+    exCap:Math.max(0,Math.min(20,+g('st-excap').value||0)),
+    exFirst:g('st-exfirst').checked, exBadge:g('st-exbadge').checked};
+  try{ await setDoc(cfgRef(),n); CFG={...DEF,...n}; close_('ov-set'); paint(); toast('설정 저장','ok'); }
+  catch(e){ toast('실패: '+e.message,'err'); }
+};
+document.getElementById('st-cancel').onclick=()=>close_('ov-set');
+
+const open_=id=>document.getElementById(id).classList.add('open');
+const close_=id=>document.getElementById(id).classList.remove('open');
 document.addEventListener('keydown',e=>{
-  if(e.key==='Escape') ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay','pause-overlay'].forEach(id=>closeModal(id));
-  if(e.key==='Enter'){
-    if(document.getElementById('add-overlay').classList.contains('open')) submitAdd();
-    else if(document.getElementById('edit-overlay').classList.contains('open')) submitEdit();
-    else if(document.getElementById('pause-overlay').classList.contains('open')) confirmPauseToggle();
-  }
+  if(e.key==='Escape'){ ['ov-edit','ov-bulk','ov-set','ov-log'].forEach(close_); return; }
+  if(['INPUT','TEXTAREA','SELECT'].includes(e.target.tagName)) return;
+  if(document.querySelector('.ov.open')) return;
+  const k=e.key.toLowerCase();
+  if(k==='t')setMode('tv'); else if(k==='a')setMode('admin');
+  else if(k==='m')setMode('mob'); else if(k==='p')setMode('public');
 });
+document.querySelectorAll('.ov').forEach(o=>o.onclick=e=>{if(e.target===o)o.classList.remove('open');});
 
-/* ════ 클록 ════ */
-function tick(){
-  const n=new Date();
-  document.getElementById('clock').textContent=
-    `${String(n.getHours()).padStart(2,'0')}:${String(n.getMinutes()).padStart(2,'0')}:${String(n.getSeconds()).padStart(2,'0')}`;
-}
-function updateDate(){
-  const d=new Date();
-  const days=['일','월','화','수','목','금','토'];
-  document.getElementById('header-date-full').textContent=
-    `${d.getFullYear()}년 ${d.getMonth()+1}월 ${d.getDate()}일 (${days[d.getDay()]})`;
-}
-
-/* ════ 버튼 이벤트 연결 ════ */
-function bindButtons(){
-  document.getElementById('btn-settings').onclick      = openSettings;
-  document.getElementById('btn-export').onclick        = exportExcel;
-  document.getElementById('btn-reset-open').onclick    = ()=>{const p=document.getElementById('reset-pw');if(p)p.value='';openModal('reset-overlay');};
-  document.getElementById('btn-closeday-open').onclick  = ()=>{ if(confirm("'하루' 작업 차량을 내일로 이월하고 하루 마감을 진행할까요?")) doCloseDay(); };
-  document.getElementById('btn-add-submit').onclick    = submitAdd;
-  document.getElementById('btn-add-cancel').onclick    = ()=>closeModal('add-overlay');
-  document.getElementById('btn-edit-submit').onclick   = submitEdit;
-  document.getElementById('btn-edit-cancel').onclick   = ()=>closeModal('edit-overlay');
-  document.getElementById('btn-edit-delete').onclick   = openDeleteModal;
-  document.getElementById('btn-delete-confirm').onclick = confirmDelete;
-  document.getElementById('btn-delete-cancel').onclick = ()=>closeModal('delete-overlay');
-  document.getElementById('btn-settings-save').onclick = saveSettings;
-  document.getElementById('btn-settings-cancel').onclick= ()=>closeModal('settings-overlay');
-  document.getElementById('btn-reset-confirm').onclick = doFullReset;
-  document.getElementById('btn-reset-cancel').onclick  = ()=>closeModal('reset-overlay');
-  document.getElementById('btn-user').onclick          = openUserModal;
-  document.getElementById('user-select').onchange      = toggleMasterPw;
-  document.getElementById('btn-user-save').onclick     = saveUser;
-  document.getElementById('btn-user-cancel').onclick   = ()=>closeModal('user-overlay');
-  document.getElementById('btn-history').onclick       = openHistory;
-  document.getElementById('btn-pause').onclick         = openPauseModal;
-  document.getElementById('btn-pause-confirm').onclick  = confirmPauseToggle;
-  document.getElementById('btn-pause-cancel').onclick   = ()=>closeModal('pause-overlay');
-  document.getElementById('btn-history-close').onclick = ()=>closeModal('history-overlay');
-}
-
-/* ════ BOOT ════ */
+/* ════ 부팅 ════ */
 (async()=>{
-  updateDate(); tick(); setInterval(tick,1000);
-  bindButtons();
-  bindGridEvents();
-  updateUserLabel();
+  viewDay=ymd(new Date());
+  const u=new URL(location);
+  mode = u.searchParams.get('v') || localStorage.getItem('bh_q_mode') || 'admin';
   try{
-    await loadSettings();
-    render();
-    subscribeVehicles();
-    subscribeSettings();
-    subscribePause();
-    updatePauseUI();
-    document.getElementById('loading-screen').classList.add('hide');
-    if(!deviceUser){
-      setTimeout(openUserModal, 600);
-    }
+    const s=await getDoc(cfgRef());
+    if(s.exists()) CFG={...DEF,...s.data()}; else await setDoc(cfgRef(),DEF);
+    onSnapshot(cfgRef(),d=>{ if(d.exists()){CFG={...DEF,...d.data()};paint();} });
+    subscribe(viewDay);
+    paint();
+    document.getElementById('load').classList.add('hide');
     setInterval(()=>{
-      const modalOpen = ['add-overlay','edit-overlay','settings-overlay','reset-overlay','user-overlay','history-overlay','delete-overlay','pause-overlay']
-        .some(id=>document.getElementById(id).classList.contains('open'));
-      if(!modalOpen) render();
-    }, 30000);
+      ['tvclock','hclock'].forEach(i=>{const e=document.getElementById(i); if(e)e.textContent=hm(Date.now());});
+      if(mode!=='admin' && viewDay!==ymd(new Date())){ viewDay=ymd(new Date()); subscribe(viewDay); }
+    },1000);
+    setInterval(()=>{ if(!document.querySelector('.ov.open')) paint(); },15000);
   }catch(e){
-    showFatalError("Firestore 연결 실패", [
-      "다음을 확인해주세요:",
-      "1️⃣ Firestore 규칙(Rules)을 게시했는지",
-      "2️⃣ 인터넷 연결 상태",
-      "3️⃣ file:// 가 아닌 http(s):// 로 접속했는지",
-      "<br>오류 내용:",
-      "<span style='color:#90a4c8;font-size:12px'>"+(e.code||'')+" "+e.message+"</span>"
-    ]);
+    document.getElementById('load').innerHTML=
+      `<div style="max-width:440px;padding:22px;background:#1a0a12;border:1px solid #ff1744;border-radius:12px">
+        <div style="color:#ff6b6b;font-size:16px;font-weight:700;margin-bottom:9px">연결 실패</div>
+        <div style="color:#e8eeff;font-size:13px;line-height:1.8">
+        Firestore 규칙에 <b style="color:#ffd600">queue</b> 컬렉션 권한이 있는지 확인해주세요.<br><br>
+        <span style="color:#90a4c8;font-size:12px">${(e.code||'')+' '+e.message}</span></div></div>`;
   }
 })();
 </script>
