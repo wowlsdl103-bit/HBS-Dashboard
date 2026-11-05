@@ -72,22 +72,44 @@
   .hero .tag{position:absolute;top:16px;right:20px}
 
   /* 대기 그리드 */
-  .qgrid{flex:1;display:grid;grid-template-columns:repeat(auto-fill,minmax(228px,1fr));
-    grid-auto-rows:min-content;gap:11px;align-content:start;overflow:hidden}
-  .qc{background:var(--bg3);border:1px solid var(--border);border-radius:13px;padding:12px 14px;display:flex;align-items:center;gap:13px}
-  .qc .n{width:40px;height:40px;flex:none;border-radius:11px;background:var(--bg4);border:1px solid var(--border2);
-    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:19px;font-weight:800;color:var(--text2)}
-  .qc .car{font-family:var(--mono);font-size:27px;font-weight:800;letter-spacing:1px;line-height:1.1}
-  .qc .sub{font-size:12px;color:var(--text3);margin-top:1px}
+  /* 대기 격자 — 대기 대수에 따라 칸 크기가 자동으로 3단계로 바뀝니다.
+     한가할 때는 크게(d-xl), 밀릴 때는 25대까지 한 화면에(d-md). */
+  .qgrid{flex:1;display:grid;grid-auto-rows:min-content;gap:13px;align-content:start;overflow:hidden}
+  .qc{background:var(--bg3);border:1px solid var(--border);border-radius:15px;padding:17px 22px;display:flex;align-items:center;gap:19px}
+  .qc .n{flex:none;background:var(--bg4);border:1px solid var(--border2);
+    display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-weight:800;color:var(--text2)}
+  .qc .car{font-family:var(--mono);font-weight:800;letter-spacing:1.5px;line-height:1.1}
+  .qc .sub{color:var(--text3);margin-top:3px}
+
+  /* ① 여유 — 격자 10칸 이하 */
+  .qgrid.d-xl{grid-template-columns:repeat(auto-fill,minmax(466px,1fr))}
+  .d-xl .qc .n{width:58px;height:58px;border-radius:15px;font-size:clamp(20px,1.6vw,27px)}
+  .d-xl .qc .car{font-size:clamp(30px,2.5vw,42px)}
+  .d-xl .qc .sub{font-size:clamp(13px,1.05vw,16px)}
+  /* ② 보통 — 11~16칸 (4열 4행) */
+  .qgrid.d-lg{grid-template-columns:repeat(auto-fill,minmax(346px,1fr));gap:12px}
+  .d-lg .qc{padding:17px 20px;gap:16px;border-radius:14px}
+  .d-lg .qc .n{width:54px;height:54px;border-radius:14px;font-size:clamp(18px,1.4vw,24px)}
+  .d-lg .qc .car{font-size:clamp(27px,2.15vw,38px)}
+  .d-lg .qc .sub{font-size:clamp(12px,.95vw,15px)}
+  /* ③ 혼잡 — 17칸 이상 (4열 6행, 25대까지 한 화면에) */
+  .qgrid.d-md{grid-template-columns:repeat(auto-fill,minmax(342px,1fr));gap:9px}
+  .d-md .qc{padding:13px 17px;gap:14px;border-radius:12px}
+  .d-md .qc .n{width:48px;height:48px;border-radius:12px;font-size:clamp(16px,1.25vw,21px)}
+  .d-md .qc .car{font-size:clamp(24px,1.9vw,34px);letter-spacing:1px}
+  .d-md .qc .sub{font-size:clamp(11px,.85vw,13.5px);margin-top:2px}
   .qc.k-resv{border-left:4px solid var(--cyan)}
   .qc.k-walk{border-left:4px solid var(--text3)}
   .qc.k-express{border-left:4px solid var(--gold)}
   .qc.k-eta{border-left:4px solid var(--purple);opacity:.74}
   .qc.k-etain{border-left:4px solid var(--cyan)}
-  .qc .n.eta{font-size:13px;font-weight:700;letter-spacing:-.5px;background:rgba(157,107,255,.16);
+  .qc .n.eta{font-weight:700;letter-spacing:-.5px;background:rgba(157,107,255,.16);
     border-color:rgba(157,107,255,.5);color:#cbb0ff}
+  .d-xl .qc .n.eta{font-size:clamp(14px,1.1vw,18px)}
+  .d-lg .qc .n.eta{font-size:clamp(12px,.95vw,15px)}
+  .d-md .qc .n.eta{font-size:clamp(10px,.8vw,12.5px)}
   .tvpill.e b{color:#cbb0ff}
-  .qmore{grid-column:1/-1;text-align:center;color:var(--text3);font-size:16px;padding:6px}
+  .qmore{grid-column:1/-1;text-align:center;color:var(--text3);font-size:19px;padding:10px}
 
   /* 우측 — 예약 차량 LIST */
   .tv-side{width:264px;flex:none;background:var(--bg2);border:1px solid var(--border);border-radius:16px;
@@ -277,13 +299,14 @@
     .tv-hd{padding:12px 14px;gap:10px}.tv-hd h1{font-size:18px}.tv-now .t{font-size:24px}
     .tv-body{padding:12px;flex-direction:column}
     .hero .car{font-size:38px}
-    .qgrid{grid-template-columns:1fr 1fr}
+    .qgrid{grid-template-columns:1fr;gap:9px}
+    .qc{padding:13px 16px;gap:14px;border-radius:12px}
+    .qc .n{width:44px;height:44px;border-radius:12px}
     .nwrap{padding:0 12px 14px}
     .notice{grid-template-columns:1fr;gap:9px}
     .wrap{padding:12px 12px 70px}
     table.lst{font-size:12px}table.lst td,table.lst th{padding:7px 4px}
   }
-  @media(max-width:560px){.qgrid{grid-template-columns:1fr}}
   @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -355,7 +378,7 @@
   <h3>설정</h3>
   <div class="sw"><span>차량번호 가리기<small>12가3456 → 12가**56</small></span><input type="checkbox" id="st-mcar"></div>
   <div class="sw"><span>대기실 TV에 고객명 표시<small>공개 링크에는 어떤 설정이든 이름이 전송되지 않습니다</small></span><input type="checkbox" id="st-tvname"></div>
-  <div class="sw"><span>대기실 TV 표시 대수</span><input class="fi mono" id="st-rows" type="number" min="4" max="24"></div>
+  <div class="sw"><span>대기실 TV 표시 대수</span><input class="fi mono" id="st-rows" type="number" min="6" max="40"></div>
   <div class="sw"><span>예약 우선 유예 (분)<small>10:00 예약이면 09:30부터 우선, 10:30 넘겨 도착하면 도착순으로 강등</small></span><input class="fi mono" id="st-grace" type="number" min="0" max="120"></div>
   <div class="sw"><span>긴급 1일 허용 건수<small>넘기면 등록할 때 경고가 뜹니다</small></span><input class="fi mono" id="st-excap" type="number" min="0" max="20"></div>
   <div class="sw"><span>긴급을 예약보다 우선<small style="color:#e8c470">켜면 미리 예약한 고객이 뒤로 밀립니다. 권장하지 않습니다</small></span><input type="checkbox" id="st-exfirst"></div>
@@ -391,7 +414,7 @@ try{ app=initializeApp(firebaseConfig); db=getFirestore(app); }
 catch(e){ document.getElementById('load').innerHTML=`<div style="color:#ff6b6b">Firebase 초기화 실패<br>${e.message}</div>`; throw e; }
 
 const COLL='queue';
-const DEF={maskCar:true, tvName:true, rows:12, grace:30, exCap:3, exFirst:false, exBadge:false};
+const DEF={maskCar:true, tvName:true, rows:25, grace:30, exCap:3, exFirst:false, exBadge:false};
 const KIND={resv:'예약', walk:'현장접수', express:'긴급'};
 const FLAG={keyin:'키 차안', later:'입고예정'};
 const LATE_MIN=30;   // 입고 예정시각에서 이만큼 지나면 '입고 지연'으로 바뀝니다
@@ -559,7 +582,7 @@ function paint(){
 
 /* ════ ① 대기실 TV ════ */
 function vTV(){
-  const w=waiting(), bl=boardList(), lim=CFG.rows||12, now=new Date();
+  const w=waiting(), bl=boardList(), lim=CFG.rows||25, now=new Date();
   const hero=bl.filter(x=>x.no).slice(0,2);            // 히어로는 실제 대기 차량만
   const heroIds=new Set(hero.map(x=>x.r.id));
   const grid=bl.filter(x=>!heroIds.has(x.r.id)).slice(0,lim);
@@ -589,7 +612,7 @@ function vTV(){
         </div>`).join('')}
         ${hero.length===1?'<div></div>':''}
       </div>
-      <div class="qgrid">
+      <div class="qgrid ${grid.length<=10?'d-xl':(grid.length<=16?'d-lg':'d-md')}">
         ${grid.map(x=>`<div class="qc k-${pubKind(x.r)}">
           <div class="n${x.no?'':' eta'}">${x.no??'입.예'}</div>
           <div style="min-width:0"><div class="car">${esc(maskCar(x.r.car))}</div>
@@ -1026,7 +1049,7 @@ document.getElementById('lg-pw').onkeydown=e=>{ if(e.key==='Enter')document.getE
 function openSet(){
   const g=i=>document.getElementById(i);
   g('st-mcar').checked=!!CFG.maskCar; g('st-tvname').checked=!!CFG.tvName;
-  g('st-rows').value=CFG.rows??12; g('st-grace').value=CFG.grace??30;
+  g('st-rows').value=CFG.rows??25; g('st-grace').value=CFG.grace??30;
   g('st-excap').value=CFG.exCap??3; g('st-exfirst').checked=!!CFG.exFirst; g('st-exbadge').checked=!!CFG.exBadge;
   g('st-pw').value=''; open_('ov-set');
 }
@@ -1034,7 +1057,7 @@ document.getElementById('st-save').onclick=async()=>{
   const g=i=>document.getElementById(i);
   if(g('st-pw').value.trim()!==PW.ADMIN){ alert('관리자 암호가 올바르지 않습니다'); return; }
   const n={maskCar:g('st-mcar').checked, tvName:g('st-tvname').checked,
-    rows:Math.max(4,Math.min(24,+g('st-rows').value||12)),
+    rows:Math.max(6,Math.min(40,+g('st-rows').value||25)),
     grace:Math.max(0,Math.min(120,+g('st-grace').value||0)),
     exCap:Math.max(0,Math.min(20,+g('st-excap').value||0)),
     exFirst:g('st-exfirst').checked, exBadge:g('st-exbadge').checked};
