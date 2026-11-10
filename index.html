@@ -418,8 +418,9 @@ const isOverdue=r=>r.flag==='later'&&r.status==='scheduled'&&r.etaAt&&Date.now()
 /* select 값 'walk:later' ↔ {kind:'walk', flag:'later'} */
 const splitSel=v=>{const[a,b]=String(v).split(':');return{kind:a,flag:b||''};};
 const joinSel=r=>r.flag?`${r.kind}:${r.flag}`:r.kind;
-/* 그 건의 기준 시각 = 순서가 정해지는 시각. 입고예정은 도착 여부와 무관하게 예정시각입니다. */
-const baseAt=r=>r.kind==='resv'?r.resvAt:(r.flag==='later'?(r.etaAt||r.arrivedAt):r.arrivedAt);
+/* 그 건의 기준 시각 = 순서가 정해지는 시각 */
+const baseAt=r=>r.kind==='resv'?r.resvAt
+  :(r.flag==='later'?(r.arrivedAt?ticketOf(r):(r.etaAt||r.arrivedAt)):r.arrivedAt);
 /* 번호표(최초 접수) 시각 — 없는 과거 기록은 createdAt으로 대체 */
 const ticketOf=r=>r.ticketAt||r.createdAt||0;
 /* 입고예정 차량의 현재 단계 */
@@ -454,9 +455,10 @@ const digits=s=>(s||'').replace(/\D/g,'');
 const last4=s=>digits(s).slice(-4);
 
 /* ════ 정렬: 예약 > 긴급 > 현장접수 (기본) ════ */
-/* 우선순위: 예약 → 긴급 → 현장접수·입고예정(같은 줄)
-   입고예정 차량은 따로 우선권을 갖지 않고, '입고 예정시각' 자리에 현장접수와 나란히 섭니다.
-   예) 15:03 현장접수 → 15:30 입고예정(08:00 접수) → 15:40 현장접수 */
+/* 우선순위: 예약 → 긴급 → 현장접수·입고예정(같은 줄, 별도 우선권 없음)
+   입고예정 차량의 자리:
+     · 도착 전 → 입고 예정시각   예) 15:03 현장 → [입.예 15:30] → 15:40 현장
+     · 입고 후 → 최초 접수시각   예) [입완 08:00] → 15:03 현장 → 15:40 현장 */
 function sortKey(r){
   const g=(CFG.grace??30)*60000;
   const T_RESV=0, T_EXP=CFG.exFirst?-1:1, T_WALK=2;
@@ -465,7 +467,8 @@ function sortKey(r){
     const late=r.arrivedAt && r.arrivedAt>r.resvAt+g;
     if(late){tier=T_WALK;t=r.arrivedAt;} else {tier=T_RESV;t=r.resvAt;}
   } else if(r.kind==='express'){ tier=T_EXP; t=r.arrivedAt||ticketOf(r); }
-  else if(r.flag==='later'){ tier=T_WALK; t=r.etaAt||ticketOf(r); }   // 도착 여부와 무관하게 예정시각 자리
+  // 입고예정 — 아직 안 왔으면 '예정시각' 자리에 표시만, 실제 입고되면 '최초 접수시각' 자리로
+  else if(r.flag==='later'){ tier=T_WALK; t = r.arrivedAt? ticketOf(r) : (r.etaAt||ticketOf(r)); }
   else { tier=T_WALK; t=r.arrivedAt||ticketOf(r); }
   return tier*1e13 + t;
 }
@@ -502,7 +505,9 @@ const NOTICE=`<div class="nwrap">
 
 /* 고객 화면용 배지 — 긴급은 기본적으로 감춥니다 */
 function pubTag(r){
-  if(r.flag==='later') return `<span class="tag ${r.arrivedAt?'walk':'eta'}">${hm(r.etaAt)} 입고 예정, ${hm(ticketOf(r))} 접수</span>`;
+  if(r.flag==='later') return `<span class="tag ${r.arrivedAt?'walk':'eta'}">${r.arrivedAt
+    ? `${hm(ticketOf(r))} 접수, ${hm(r.etaAt)} 입고`
+    : `${hm(r.etaAt)} 입고 예정, ${hm(ticketOf(r))} 접수`}</span>`;
   if(r.kind==='express') return CFG.exBadge? '<span class="tag express">긴급</span>' : '<span class="tag walk">접수</span>';
   if(r.kind==='resv') return `<span class="tag ${isLate(r)?'late':'resv'}">${hm(r.resvAt)} 예약</span>`;
   return `<span class="tag walk">${r.arrivedAt?hm(r.arrivedAt)+' 접수':'접수'}</span>`;
@@ -511,7 +516,10 @@ const pubKind=r=>(r.flag==='later')?(r.arrivedAt?'etain':'eta')
   :((r.kind==='express'&&!CFG.exBadge)?'walk':r.kind);
 /* 대기판 한 줄의 보조 설명 — 입고 완료된 차는 '최초 접수 시각'을 보여줍니다 */
 const pubSub=r=>{
-  if(r.flag==='later') return `${hm(r.etaAt)} 입고 예정, ${hm(ticketOf(r))} 접수`;
+  // 앞에 오는 시각이 곧 순서 기준입니다
+  if(r.flag==='later') return r.arrivedAt
+    ? `${hm(ticketOf(r))} 접수, ${hm(r.etaAt)} 입고`
+    : `${hm(r.etaAt)} 입고 예정, ${hm(ticketOf(r))} 접수`;
   if(r.kind==='resv') return hm(r.resvAt)+' 예약';
   return r.arrivedAt? hm(r.arrivedAt)+' 접수' : '접수';
 };
