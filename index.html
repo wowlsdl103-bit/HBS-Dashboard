@@ -203,12 +203,12 @@
   .panel h2{font-size:14px;font-weight:700;color:var(--text2);margin-bottom:12px}
   .panel h2 span{font-weight:400;color:var(--text3);font-size:12.5px}
   /* 한국어 time 입력은 '오후 03:45'로 길게 표시돼 넉넉한 폭이 필요합니다 */
-  .qf{display:grid;grid-template-columns:152px 168px 1.15fr .95fr 1.3fr auto;gap:8px;align-items:center}
+  .qf{display:grid;grid-template-columns:152px 118px 1.15fr .95fr 1.3fr auto;gap:8px;align-items:center}
   .qf #q-eta{display:none}
-  .qf.has-eta{grid-template-columns:152px 168px 168px 1fr .85fr 1.05fr auto}
+  .qf.has-eta{grid-template-columns:152px 118px 118px 1.1fr .95fr 1.2fr auto}
   .qf.has-eta #q-eta{display:block;border-color:rgba(157,107,255,.55)}
   .qf input,.qf select{background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 11px;font-size:14px;outline:none;width:100%}
-  .qf input[type=time]{min-width:150px;padding:10px 8px}
+  .qf input.tinp{min-width:108px;padding:10px 12px;text-align:center;letter-spacing:1px}
   .qf input:focus,.qf select:focus{border-color:var(--blue)}
   .hint{font-size:11.5px;color:var(--text3);margin-top:8px;line-height:1.7}
   .warnbox{margin-top:10px;padding:10px 13px;background:rgba(255,179,0,.09);border-left:3px solid var(--gold);
@@ -269,7 +269,8 @@
   .fl{display:block;font-size:12px;color:var(--text2);margin-bottom:5px}
   .fi{width:100%;background:var(--bg);border:1px solid var(--border2);border-radius:8px;padding:10px 12px;outline:none}
   .fi:focus{border-color:var(--blue)}
-  .fi[type=time],.fi[type=date]{padding:10px 8px}
+  .fi[type=date]{padding:10px 8px}
+  .fi.tinp{text-align:center;letter-spacing:1px}
   .two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
   .mbtns{display:flex;gap:8px;margin-top:16px}
   .mbtns .btn{flex:1;padding:11px}
@@ -324,14 +325,14 @@
       <option value="walk:later">현장접수 · 입고예정</option>
       <option value="express">긴급</option>
       <option value="resv">예약</option></select></div>
-    <div class="fr"><label class="fl">접수시각 <span style="color:var(--text3)">· 번호표 기준</span></label><input class="fi mono" id="ed-ticket" type="time"></div>
+    <div class="fr"><label class="fl">접수시각 <span style="color:var(--text3)">· 번호표 기준</span></label><input class="fi mono tinp" id="ed-ticket" inputmode="numeric" maxlength="5" placeholder="14:00"></div>
   </div>
   <div class="fr" id="ed-resvrow" style="display:none">
-    <label class="fl" style="color:var(--cyan)">예약시각</label><input class="fi mono" id="ed-resv" type="time">
+    <label class="fl" style="color:var(--cyan)">예약시각</label><input class="fi mono tinp" id="ed-resv" inputmode="numeric" maxlength="5" placeholder="14:00">
   </div>
   <div class="two" id="ed-etarow" style="display:none">
-    <div class="fr"><label class="fl" style="color:#cbb0ff">입고 예정시각</label><input class="fi mono" id="ed-eta" type="time"></div>
-    <div class="fr"><label class="fl" id="ed-arrlbl">입고(도착) 시각</label><input class="fi mono" id="ed-arr" type="time"></div>
+    <div class="fr"><label class="fl" style="color:#cbb0ff">입고 예정시각</label><input class="fi mono tinp" id="ed-eta" inputmode="numeric" maxlength="5" placeholder="14:00"></div>
+    <div class="fr"><label class="fl" id="ed-arrlbl">입고(도착) 시각</label><input class="fi mono tinp" id="ed-arr" inputmode="numeric" maxlength="5" placeholder="14:00"></div>
   </div>
   <div class="fr"><label class="fl">작업 내용 <span style="color:var(--text3)">· 고객 화면에는 표시되지 않습니다</span></label><input class="fi" id="ed-work"></div>
   <div class="fr"><label class="fl">상태</label><select class="fi" id="ed-status">
@@ -438,7 +439,28 @@ const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${Str
 const hm=t=>`${String(new Date(t).getHours()).padStart(2,'0')}:${String(new Date(t).getMinutes()).padStart(2,'0')}`;
 const esc=s=>(s??'').toString().replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 const dayPlus=n=>{const d=new Date();d.setDate(d.getDate()+n);return ymd(d);};
-const at=(d,t)=>(!d||!t)?null:new Date(`${d}T${t}:00`).getTime();
+/* ── 24시간제 시각 입력 ──
+   브라우저의 type="time"은 OS 언어를 따라가 '오후 03:48'로 나오므로 쓰지 않습니다.
+   숫자만 받아 항상 14:00 형태로 정규화합니다. ("1400" "14:0" "930" 모두 인식) */
+function normTime(v){
+  const d=String(v??'').replace(/\D/g,'');
+  if(!d) return '';
+  const h = d.length<=2 ? +d : +d.slice(0,-2);
+  const m = d.length<=2 ? 0  : +d.slice(-2);
+  if(!Number.isFinite(h)||!Number.isFinite(m)||h>23||m>59) return '';
+  return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+}
+function bindTimeInputs(){
+  document.querySelectorAll('input.tinp').forEach(el=>{
+    if(el._tb) return; el._tb=true;
+    el.addEventListener('input',()=>{
+      const d=el.value.replace(/\D/g,'').slice(0,4);
+      el.value = d.length>=3 ? d.slice(0,-2)+':'+d.slice(-2) : d;
+    });
+    el.addEventListener('blur',()=>{ el.value=normTime(el.value); });
+  });
+}
+const at=(d,t)=>{ const n=normTime(t); return (!d||!n)?null:new Date(`${d}T${n}:00`).getTime(); };
 function toast(m,t=''){const e=document.getElementById('toast');e.textContent=m;e.className='toast '+t;void e.offsetWidth;e.classList.add('show');setTimeout(()=>e.classList.remove('show'),2600);}
 
 function maskName(n){
@@ -506,7 +528,7 @@ const NOTICE=`<div class="nwrap">
 /* 고객 화면용 배지 — 긴급은 기본적으로 감춥니다 */
 function pubTag(r){
   if(r.flag==='later') return `<span class="tag ${r.arrivedAt?'walk':'eta'}">${r.arrivedAt
-    ? `${hm(ticketOf(r))} 접수, ${hm(r.etaAt)} 입고`
+    ? `${hm(ticketOf(r))} 접수, ${hm(r.arrivedAt)} 입고`
     : `${hm(r.etaAt)} 입고 예정, ${hm(ticketOf(r))} 접수`}</span>`;
   if(r.kind==='express') return CFG.exBadge? '<span class="tag express">긴급</span>' : '<span class="tag walk">접수</span>';
   if(r.kind==='resv') return `<span class="tag ${isLate(r)?'late':'resv'}">${hm(r.resvAt)} 예약</span>`;
@@ -516,9 +538,9 @@ const pubKind=r=>(r.flag==='later')?(r.arrivedAt?'etain':'eta')
   :((r.kind==='express'&&!CFG.exBadge)?'walk':r.kind);
 /* 대기판 한 줄의 보조 설명 — 입고 완료된 차는 '최초 접수 시각'을 보여줍니다 */
 const pubSub=r=>{
-  // 앞에 오는 시각이 곧 순서 기준입니다
+  // 앞에 오는 시각이 곧 순서 기준. 입고 후에는 예정이 아니라 '실제 입고 시각'을 보여줍니다.
   if(r.flag==='later') return r.arrivedAt
-    ? `${hm(ticketOf(r))} 접수, ${hm(r.etaAt)} 입고`
+    ? `${hm(ticketOf(r))} 접수, ${hm(r.arrivedAt)} 입고`
     : `${hm(r.etaAt)} 입고 예정, ${hm(ticketOf(r))} 접수`;
   if(r.kind==='resv') return hm(r.resvAt)+' 예약';
   return r.arrivedAt? hm(r.arrivedAt)+' 접수' : '접수';
@@ -727,8 +749,8 @@ function vAdmin(){
           <option value="walk:later">현장접수 · 입고예정</option>
           <option value="express">긴급</option>
           <option value="resv">예약</option></select>
-        <input id="q-time" type="time" class="mono">
-        <input id="q-eta" type="time" class="mono" title="입고 예정시각">
+        <input id="q-time" class="mono tinp" inputmode="numeric" maxlength="5" placeholder="14:00">
+        <input id="q-eta" class="mono tinp" inputmode="numeric" maxlength="5" placeholder="입고 14:00" title="입고 예정시각">
         <input id="q-car" class="mono" placeholder="12가3456">
         <input id="q-name" placeholder="고객명">
         <input id="q-work" placeholder="작업 내용 (선택)">
@@ -831,6 +853,7 @@ function bindAdmin(){
   };
   g('q-kind').onchange=()=>sync(true); sync(false);
   if(!g('q-time').value) g('q-time').value=nowHM();
+  bindTimeInputs();
   document.querySelectorAll('[data-arrive]').forEach(b=>b.onclick=()=>arrive(b.dataset.arrive));
   document.querySelectorAll('[data-start]').forEach(b=>b.onclick=()=>startWork(b.dataset.start));
   document.querySelectorAll('[data-restore]').forEach(b=>b.onclick=()=>restore(b.dataset.restore));
@@ -1088,6 +1111,7 @@ document.querySelectorAll('.ov').forEach(o=>o.onclick=e=>{if(e.target===o)o.clas
     onSnapshot(cfgRef(),d=>{ if(d.exists()){CFG={...DEF,...d.data()};paint();} });
     subscribe(viewDay);
     paint();
+    bindTimeInputs();                       // 모달 안의 시각 칸(정적)
     document.getElementById('load').classList.add('hide');
     setInterval(()=>{
       ['tvclock','hclock'].forEach(i=>{const e=document.getElementById(i); if(e)e.textContent=hm(Date.now());});
