@@ -234,6 +234,17 @@
   .mini:hover{border-color:var(--blue);color:var(--text)}
   .mini.g{border-color:rgba(0,230,118,.4);color:var(--green)}
   .mini.b{border-color:rgba(41,121,255,.5);color:#7aa8ff;font-weight:700}
+  .mini.mv{padding:5px 7px;min-width:28px;border-color:rgba(255,214,0,.4);color:var(--yellow);font-weight:700}
+  .mini.mv:hover{background:rgba(255,214,0,.12)}
+  /* 순서 조정 입구 — 제목 옆의 작은 점. 아는 사람만 누릅니다 */
+  .odot{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--border2);
+    margin-left:9px;cursor:pointer;vertical-align:1px;transition:.15s}
+  .odot:hover{background:var(--yellow);box-shadow:0 0 7px rgba(255,214,0,.5)}
+  .omode{font-size:11.5px;font-weight:700;color:var(--yellow);background:rgba(255,214,0,.12);
+    border:1px solid rgba(255,214,0,.45);border-radius:11px;padding:3px 9px;margin-left:8px}
+  .obar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:11px;padding:10px 13px;
+    background:rgba(255,214,0,.07);border-left:3px solid var(--yellow);border-radius:7px;font-size:12px;color:#e8c470}
+  .obar span{flex:1;min-width:220px}
   .mini.b:hover{background:rgba(41,121,255,.14)}
   .st-e-overdue{background:rgba(255,23,68,.15);color:#ff8a8a;border:1px solid rgba(255,23,68,.5)}
   .st-e-wait{background:rgba(157,107,255,.14);color:#cbb0ff;border:1px solid rgba(157,107,255,.45)}
@@ -433,6 +444,7 @@ const timeLabel=sel=>{const{kind,flag}=splitSel(sel);
 let CFG={...DEF}, rows=[], viewDay=null, mode='admin';
 let me=localStorage.getItem('bh_q_me')||'', myCar=localStorage.getItem('bh_q_mycar')||'';
 let lastTaken=null, undoTimer=null, addKind='resv';
+let orderMode=false;   // 순서 조정 모드 (새로고침하면 꺼집니다)
 
 /* ════ 유틸 ════ */
 const ymd=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -482,6 +494,8 @@ const last4=s=>digits(s).slice(-4);
      · 도착 전 → 입고 예정시각   예) 15:03 현장 → [입.예 15:30] → 15:40 현장
      · 입고 후 → 최초 접수시각   예) [입완 08:00] → 15:03 현장 → 15:40 현장 */
 function sortKey(r){
+  // 손으로 순서를 옮긴 건은 그 위치를 그대로 지킵니다 (순서 조정 모드에서만 생깁니다)
+  if(Number.isFinite(r.manualKey)) return r.manualKey;
   const g=(CFG.grace??30)*60000;
   const T_RESV=0, T_EXP=CFG.exFirst?-1:1, T_WALK=2;
   let tier,t;
@@ -494,6 +508,40 @@ function sortKey(r){
   else { tier=T_WALK; t=r.arrivedAt||ticketOf(r); }
   return tier*1e13 + t;
 }
+/* ── 수기 순서 조정 ──
+   위/아래 칸의 정렬값 사이로 끼워 넣습니다. 다른 차가 새로 들어와도 상대 위치가 유지됩니다. */
+async function moveRow(id,dir){
+  const list=waiting();
+  const i=list.findIndex(r=>r.id===id);
+  if(i<0) return;
+  const j=i+dir;                                   // 자리를 바꿀 상대
+  if(j<0||j>=list.length){ toast(dir<0?'이미 맨 위입니다':'이미 맨 아래입니다'); return; }
+  const near=sortKey(list[j]);
+  const far = (dir<0)
+    ? (j-1>=0        ? sortKey(list[j-1]) : near-2000)   // 위로: 상대의 '위' 칸
+    : (j+1<list.length? sortKey(list[j+1]) : near+2000); // 아래로: 상대의 '아래' 칸
+  let key=(near+far)/2;
+  if(Math.abs(near-far)<2){ await renumber(); return moveRow(id,dir); }  // 간격이 다 닳으면 재배치
+  const r=rows.find(x=>x.id===id); const o={...r}; delete o.id; o.manualKey=key;
+  try{ await put(id,o); }catch(e){ toast('실패: '+e.message,'err'); }
+}
+/* 현재 보이는 순서를 그대로 둔 채 정렬값 간격을 넓혀 둡니다 */
+async function renumber(){
+  const list=waiting();
+  for(let k=0;k<list.length;k++){
+    const o={...list[k]}; delete o.id; o.manualKey=(k+1)*100000;
+    try{ await put(list[k].id,o); }catch(e){}
+  }
+}
+/* 수기 순서를 모두 풀고 자동 정렬로 되돌립니다 */
+async function clearManual(){
+  const t=rows.filter(r=>Number.isFinite(r.manualKey));
+  if(!t.length){ toast('수기로 바꾼 순서가 없습니다'); return; }
+  if(!confirm(`수기로 조정한 ${t.length}건을 모두 자동 순서로 되돌립니다.`)) return;
+  for(const r of t){ const o={...r}; delete o.id; o.manualKey=null; try{ await put(r.id,o); }catch(e){} }
+  toast(`${t.length}건 자동 순서로 복귀`,'ok');
+}
+
 /* 대기판에 띄울 목록 — 대기 중 + 입고 예정.
    번호는 실제 대기 차량에만 매기고, 입고 예정은 '입.예' 딱지로 자리만 지킵니다. */
 function boardList(){
@@ -766,7 +814,12 @@ function vAdmin(){
       s.filter(isOverdue).length?` <span style="color:#ff8a8a;font-weight:700">· 입고 지연 ${s.filter(isOverdue).length}건</span>`:''}</h2>
       ${s.length?tbl(s,true):'<p class="hint">등록된 예약이 없습니다.</p>'}</div>
 
-    <div class="panel"><h2>대기 중 · ${w.length}건 <span>· 위에서부터 실제 순서입니다</span></h2>
+    <div class="panel"><h2>대기 중 · ${w.length}건 <span>· 위에서부터 실제 순서입니다</span><span class="odot" id="a-ord" title=" "></span>${
+      orderMode?' <span class="omode">순서 조정 중</span>':''}</h2>
+      ${orderMode?`<div class="obar">
+        <span>▲▼ 로 순서를 옮깁니다. 옮긴 건은 <b style="color:var(--yellow)">📌</b> 표시가 붙고, 새 차가 들어와도 자리를 지킵니다.</span>
+        <button class="mini" id="a-ordclear">전체 자동순서로</button>
+        <button class="mini" id="a-ordoff">조정 끝내기</button></div>`:''}
       ${w.length?tbl(w,false,true):'<p class="hint">대기 중인 차량이 없습니다.</p>'}</div>
 
     <div class="panel"><h2>배정 완료 · ${tk.length}건</h2>
@@ -780,7 +833,8 @@ function tbl(list,showArrive,showOrder){
     <th style="width:72px">구분</th><th>차량번호</th><th>고객명</th><th>작업</th>
     <th style="width:88px">시각</th><th style="width:80px">상태</th><th style="width:148px"></th></tr></thead><tbody>
   ${list.map((r,i)=>{ const od=isOverdue(r); return `<tr class="${r.status==='taken'?'taken':''}${od?' overdue':''}">
-    ${showOrder?`<td class="mono" style="font-weight:700;color:${i===0?'var(--green)':'var(--text2)'}">${i+1}</td>`:''}
+    ${showOrder?`<td class="mono" style="font-weight:700;color:${i===0?'var(--green)':'var(--text2)'}">${i+1}${
+      Number.isFinite(r.manualKey)?'<span title="수기 조정" style="color:var(--yellow);font-size:10px"> 📌</span>':''}</td>`:''}
     <td><span class="st st-${r.kind}">${KIND[r.kind]||r.kind}</span>${r.flag==='later'
       ?`<br><span class="st st-e-${etaStage(r)}" style="margin-top:3px">${ETA_LABEL[etaStage(r)]}</span>`:''}</td>
     <td class="pl">${esc(r.car)}</td><td>${esc(r.name||'-')}</td>
@@ -790,6 +844,7 @@ function tbl(list,showArrive,showOrder){
       r.flag==='later'?`<br><span style="color:var(--text3);font-size:11px">접수 ${hm(ticketOf(r))}${r.arrivedAt?` · 도착 ${hm(r.arrivedAt)}`:''}</span>`:''}</td>
     <td><span class="st st-${r.status}">${({scheduled:'예정',waiting:'대기중',taken:'배정완료'})[r.status]}</span></td>
     <td style="text-align:right;white-space:nowrap">
+      ${(orderMode&&showOrder)?`<button class="mini mv" data-mv="${r.id}|-1" title="위로">▲</button><button class="mini mv" data-mv="${r.id}|1" title="아래로">▼</button> `:''}
       ${showArrive?`<button class="mini g" data-arrive="${r.id}">도착</button> `:''}
       ${r.status==='waiting'?`<button class="mini b" data-start="${r.id}">정비시작</button> `:''}
       ${r.status==='taken'?`<button class="mini" data-restore="${r.id}">되돌리기</button> `:''}
@@ -834,6 +889,18 @@ function bindAdmin(){
   g('a-bulk').onclick=()=>{g('bk-text').value='';g('bk-prev').textContent='';open_('ov-bulk');};
   g('a-set').onclick=openSet;
   g('a-log').onclick=openLog;
+  if(g('a-ord')) g('a-ord').onclick=()=>{
+    if(orderMode){ orderMode=false; paint(); return; }
+    const pw=prompt('순서 조정 모드를 켭니다.\n관리자 암호를 입력하세요');
+    if(pw===null) return;
+    if(pw.trim()!==PW.ADMIN){ alert('암호가 올바르지 않습니다'); return; }
+    orderMode=true; paint(); toast('순서 조정 모드 — ▲▼ 로 옮기세요','ok');
+  };
+  if(g('a-ordoff')) g('a-ordoff').onclick=()=>{ orderMode=false; paint(); };
+  if(g('a-ordclear')) g('a-ordclear').onclick=clearManual;
+  document.querySelectorAll('[data-mv]').forEach(btn=>btn.onclick=()=>{
+    const [id,d]=btn.dataset.mv.split('|'); moveRow(id, +d);
+  });
   g('a-link').onclick=()=>{
     const u=new URL(location); u.searchParams.set('v','public');
     navigator.clipboard?.writeText(u.toString()).then(()=>toast('고객용 링크를 복사했습니다','ok'),()=>prompt('이 주소를 복사하세요',u.toString()));
